@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Case Study: Automated Catalyst Scanner — Jacquelyn Zanghi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF0EA; --paper-alt:#E3E7DC; --ink:#171C1A; --ink-soft:#4B534C;
+    --line:#BFC6B7; --gold:#A9812E; --red:#7A342E; --max:860px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 28px;}
+  nav{position:sticky;top:0;z-index:20;background:rgba(238,240,234,0.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;max-width:var(--max);}
+  .nav-back{font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-decoration:none;color:var(--ink-soft);border-bottom:1px solid transparent;}
+  .nav-back:hover{color:var(--ink);border-color:var(--gold);}
+  .nav-name{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);}
+
+  header{padding:64px 0 44px;border-bottom:1px solid var(--line);}
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--gold);display:inline-block;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,5vw,48px);line-height:1.08;margin:0 0 18px;max-width:16ch;}
+  .dek{font-size:18px;color:var(--ink-soft);max-width:60ch;margin:0;}
+
+  .stat-row{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:40px 0 0;}
+  .stat{flex:1;min-width:150px;padding:20px 24px 20px 0;border-right:1px solid var(--line);}
+  .stat:last-child{border-right:none;}
+  .stat-num{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;color:var(--ink);}
+  .stat-label{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+
+  section{padding:52px 0;border-bottom:1px solid var(--line);}
+  section:nth-of-type(even){background:var(--paper-alt);}
+  .sec-num{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--gold);margin-bottom:6px;}
+  h2{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(24px,3vw,30px);margin:0 0 22px;}
+  p{margin:0 0 16px;max-width:66ch;}
+  p:last-child{margin-bottom:0;}
+
+  pre.diagram{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.55;
+    background:var(--ink); color:#DCE4DA; padding:22px 20px; border-radius:3px;
+    overflow-x:auto; margin:0 0 20px;
+  }
+
+  table.jobs{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+  table.jobs th{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;color:var(--ink-soft);border-bottom:1px solid var(--ink);padding:0 12px 10px 0;font-weight:500;}
+  table.jobs td{padding:14px 12px 14px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.jobs td.job-name{font-family:'IBM Plex Mono',monospace;font-weight:600;white-space:nowrap;}
+  table.jobs td.job-time{font-family:'IBM Plex Mono',monospace;color:var(--gold);white-space:nowrap;}
+
+  .ledger{border-top:1px solid var(--line);margin-top:8px;}
+  .ledger-row{padding:22px 0;border-bottom:1px solid var(--line);}
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-title{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0 0 8px;}
+  .ledger-row p{font-size:14.5px;margin:0;}
+
+  .stack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 40px;}
+  .stack-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .stack-row span:first-child{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);white-space:nowrap;}
+  .stack-row span:last-child{text-align:right;color:var(--ink-soft);}
+
+  .tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px;}
+  .tag{font-family:'IBM Plex Mono',monospace;font-size:12px;border:1px solid var(--line);padding:6px 12px;border-radius:2px;color:var(--ink-soft);}
+
+  footer{padding:56px 0 70px;}
+  .btn{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:11px 20px;text-decoration:none;border:1px solid var(--ink);color:var(--ink);}
+  .btn:hover{background:var(--ink);color:var(--paper);}
+
+  @media(max-width:640px){
+    .stat-row{flex-direction:column;}
+    .stat{border-right:none;border-bottom:1px solid var(--line);}
+    .stack-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="nav-back" href="jacquelyn_zanghi_portfolio.html">← Back to portfolio</a>
+    <div class="nav-name">CASE STUDY 01</div>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">FULL-STACK DATA PIPELINE</div>
+    <h1>Automated Small-Cap Catalyst Scanner</h1>
+    <p class="dek">A systematic, end-to-end system for catalyst discovery, chart-pattern classification, and predictive scoring in small-cap equities — running unattended, 24/7, on a cloud scheduler.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-num">400+</div><div class="stat-label">classified historical records</div></div>
+      <div class="stat"><div class="stat-num">~60%</div><div class="stat-label">LLM API cost reduction</div></div>
+      <div class="stat"><div class="stat-num">3</div><div class="stat-label">scheduled jobs, fully unattended</div></div>
+      <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">cloud-hosted, no manual upkeep</div></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="sec-num">01 — OVERVIEW</div>
+    <h2>The problem</h2>
+    <p>Manual small-cap catalyst research is slow and unscalable: pulling gainers lists, cross-referencing news, and judging whether a price move was a clean trend or a spike-and-fade by eye doesn't scale past a handful of tickers a day — and doing it every trading day, without fail, at 6:30am before market open, isn't realistically sustainable by hand.</p>
+    <p>The goal was a system that could (1) discover genuinely fresh, same-day catalysts rather than yesterday's already-known winners, (2) build a growing historical dataset of which catalyst types and sectors actually produce reliable price trends, and (3) track its own hit rate over time, so its usefulness could be measured rather than assumed.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-num">02 — ARCHITECTURE</div>
+    <h2>How it's built</h2>
+    <pre class="diagram">┌──────────────────┐     ┌───────────────────┐     ┌──────────────────┐
+│  Polygon.io API   │────▶│  Node.js Cron Jobs │────▶│   PostgreSQL      │
+│ (market data,      │     │  (Railway)         │     │  (shared, cloud-   │
+│  news, charts)      │     │                    │     │   hosted)          │
+└──────────────────┘     └───────────────────┘     └──────────────────┘
+                                │        │                    │
+                     ┌──────────┘        └──────────┐         │
+                     ▼                              ▼         ▼
+           ┌──────────────────┐          ┌───────────────────────┐
+           │  Claude API        │          │   Express API Server    │
+           │ (vision + search)   │          │ (public JSON endpoints   │
+           └──────────────────┘          │  + live analytics UI)    │
+                                           └───────────────────────┘</pre>
+    <p>Three scheduled jobs run daily, unattended:</p>
+    <table class="jobs">
+      <thead><tr><th>Job</th><th>Time (ET)</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td class="job-name">classify-gainers</td><td class="job-time">4:05pm</td><td>Pulls the day's top gainers, renders intraday charts, classifies each via Claude vision (chart shape) and web search (sector/catalyst) — builds the historical pattern dataset.</td></tr>
+        <tr><td class="job-name">outcome-logger</td><td class="job-time">4:15pm</td><td>Scores yesterday's picks against verified, date-specific closing prices.</td></tr>
+        <tr><td class="job-name">premarket-scan</td><td class="job-time">6:30am</td><td>Discovers fresh overnight news across the whole market, filters to small-cap common stock, scores each candidate, and emails the results.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-num">03 — KEY DECISIONS &amp; PROBLEMS SOLVED</div>
+    <h2>What actually went wrong (and how it got fixed)</h2>
+    <div class="ledger">
+      <div class="ledger-row">
+        <p class="ledger-title">Continuation bias in candidate selection</p>
+        <p>Early design mistake: the morning scan pulled candidates from yesterday's gainer list — a subtle but critical strategy flaw, since it biases toward stocks that already made their move rather than discovering fresh, same-day catalysts. Rebuilt the scan to pull from Polygon's News API directly (last 16 hours), decoupling historical pattern-building from live candidate discovery entirely.</p>
+      </div>
+      <div class="ledger-row">
+        <p class="ledger-title">Filtering out non-tradeable instruments</p>
+        <p>A significant share of "top gainers" lists were warrants, leveraged ETFs, and preferred shares — instruments with no real market cap and no independent catalyst. Added a common-stock-only filter using Polygon's instrument-type metadata, applied before any expensive classification work runs, improving data quality and cutting API cost at the same time.</p>
+      </div>
+      <div class="ledger-row">
+        <p class="ledger-title">Cost optimization on LLM calls</p>
+        <p>An early version made one search-enabled Claude call per ticker (100/day) — expensive and inefficient. Refactored into two tiers: cheap, vision-only calls for chart-shape classification, and separate batched search-enabled calls (10 tickers per call) for catalyst research, cutting cost by roughly 60% while improving catalyst identification accuracy through a more focused per-batch search budget.</p>
+      </div>
+      <div class="ledger-row">
+        <p class="ledger-title">A silent data-corruption bug</p>
+        <p>Discovered that the outcome-logging job was using a "most recent close" endpoint rather than a date-specific one — on market holidays, it silently reused stale prior-day data and mislabeled it as the current day's outcome, producing a systematic (and misleading) 100% win rate. Fixed by switching to exact-date queries with explicit holiday detection, plus building verification and manual-correction tooling to spot-check data against outside sources.</p>
+      </div>
+      <div class="ledger-row">
+        <p class="ledger-title">Shared state across dev and production</p>
+        <p>Migrated from a local JSON file — which caused local runs and the cloud deployment to silently diverge — to a shared, cloud-hosted PostgreSQL database, so the developer's machine and the production scheduler now read and write the exact same source of truth.</p>
+      </div>
+      <div class="ledger-row">
+        <p class="ledger-title">Observability</p>
+        <p>Job failures (like API credit exhaustion) were originally silent — no output, nothing until manually checking cloud logs. Added automatic failure-notification emails to every scheduled job, so any break in the pipeline surfaces immediately instead of being discovered by absence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-num">04 — RESULTS &amp; VALIDATION</div>
+    <h2>Does it actually work?</h2>
+    <p>The system currently maintains 400+ classified historical records across multiple trading weeks, with ongoing pattern analysis surfacing statistically-flagged, sample-size-aware insights — for example, contract-win catalysts showing large average moves but low follow-through consistency, versus biotech earnings beats showing smaller but more reliable trend continuation.</p>
+    <p>Rather than assume the system works, a dedicated track-record module cross-references every prediction against its actual next-day outcome, explicitly checking whether the model's own confidence scores correlate with real performance — a calibration check, not just a win/loss count.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-num">05 — TECH STACK</div>
+    <h2>Built with</h2>
+    <div class="stack-grid">
+      <div class="stack-row"><span>RUNTIME</span><span>Node.js (ESM), node-cron scheduling</span></div>
+      <div class="stack-row"><span>DATABASE</span><span>PostgreSQL (Railway-hosted) + normalized reporting layer</span></div>
+      <div class="stack-row"><span>AI / ML</span><span>Claude API — vision + search-augmented reasoning</span></div>
+      <div class="stack-row"><span>MARKET DATA</span><span>Polygon.io — snapshots, aggregates, minute bars, news</span></div>
+      <div class="stack-row"><span>INFRASTRUCTURE</span><span>Railway (compute + DB + networking), GitHub CI/CD</span></div>
+      <div class="stack-row"><span>API LAYER</span><span>Express.js — public REST endpoints + live dashboard</span></div>
+      <div class="stack-row"><span>NOTIFICATIONS</span><span>Resend (email) + carrier email-to-SMS</span></div>
+      <div class="stack-row"><span>VISUALIZATION</span><span>Chart.js analytics dashboard</span></div>
+    </div>
+    <p style="margin-top:26px;">Skills demonstrated:</p>
+    <div class="tags">
+      <span class="tag">Node.js</span><span class="tag">PostgreSQL</span><span class="tag">REST API design</span>
+      <span class="tag">LLM integration</span><span class="tag">prompt engineering</span><span class="tag">cron/job scheduling</span>
+      <span class="tag">cloud deployment</span><span class="tag">data pipeline design</span><span class="tag">debugging distributed systems</span>
+      <span class="tag">financial data analysis</span><span class="tag">Chart.js</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="btn" href="jacquelyn_zanghi_portfolio.html">← Back to portfolio</a>
+  </div>
+</footer>
+
+</body>
+</html>

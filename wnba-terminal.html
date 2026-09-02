@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WNBA Game Flow Momentum Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D10;
+    --panel:#10141A;
+    --panel-2:#151A21;
+    --border:#1F2730;
+    --border-strong:#2C3742;
+    --text:#E7ECEF;
+    --muted:#7C8A97;
+    --dim:#4E5A66;
+    --confirmed:#21C97A;
+    --confirmed-dim:#123A29;
+    --unconfirmed:#FF5C6C;
+    --unconfirmed-dim:#3A1518;
+    --away:#4C8DFF;
+    --home:#E8B94B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+  .ticker{
+    display:flex;justify-content:space-between;align-items:center;
+    border:1px solid var(--border);border-radius:6px;
+    background:var(--panel);padding:14px 18px;margin-bottom:18px;
+    flex-wrap:wrap;gap:10px;
+  }
+  .ticker-title{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+    letter-spacing:0.02em;color:var(--text);display:flex;align-items:center;gap:10px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--dim);}
+  .dot.live{background:var(--confirmed);box-shadow:0 0 0 3px var(--confirmed-dim);}
+  .ticker-read{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);}
+  .ticker-read b{color:var(--text);font-weight:600;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:-0.01em;}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 22px;line-height:1.6;max-width:640px;}
+  .panel{border:1px solid var(--border);border-radius:6px;background:var(--panel);padding:16px 18px;margin-bottom:16px;}
+  .panel-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin:0 0 12px;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12px;color:var(--muted);}
+  input[type=date], select{
+    background:var(--panel-2);border:1px solid var(--border-strong);color:var(--text);
+    font-family:'JetBrains Mono',monospace;font-size:13px;border-radius:4px;padding:8px 10px;outline:none;
+  }
+  select{min-width:280px;}
+  input:focus, select:focus{border-color:var(--away);}
+  button{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;
+    background:var(--panel-2);border:1px solid var(--border-strong);color:var(--text);
+    border-radius:4px;padding:9px 16px;cursor:pointer;letter-spacing:0.01em;
+  }
+  button:hover{border-color:var(--away);}
+  button.primary{background:var(--away);border-color:var(--away);color:#04101F;}
+  button.primary:hover{opacity:0.9;}
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  .status{font-size:12.5px;color:var(--muted);margin-top:10px;font-family:'JetBrains Mono',monospace;}
+  .status.err{color:var(--unconfirmed);}
+  .status.ok{color:var(--confirmed);}
+  .chart-wrap{position:relative;height:300px;margin-top:6px;}
+  .legend{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);}
+  .legend-swatch{width:16px;height:2px;}
+  .legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media (max-width:640px){.cards{grid-template-columns:repeat(2,1fr);}}
+  .cp-card{background:var(--panel-2);border:1px solid var(--border);border-radius:5px;padding:12px 12px;}
+  .cp-label{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;}
+  .cp-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;margin:5px 0 2px;}
+  .cp-val.away{color:var(--away);}
+  .cp-val.home{color:var(--home);}
+  .cp-sub{font-size:11.5px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'JetBrains Mono',monospace;}
+  thead th{text-align:left;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:0.05em;font-size:10.5px;padding:6px 8px;border-bottom:1px solid var(--border-strong);}
+  tbody td{padding:8px;border-bottom:1px solid var(--border);color:var(--text);}
+  tbody tr:hover{background:var(--panel-2);}
+  .tag{padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;}
+  .tag.confirmed{background:var(--confirmed-dim);color:var(--confirmed);}
+  .tag.unconfirmed{background:var(--unconfirmed-dim);color:var(--unconfirmed);}
+  .empty{color:var(--dim);font-size:12.5px;padding:20px 0;text-align:center;}
+  .hitrate{background:var(--panel-2);border:1px solid var(--border);border-radius:5px;padding:14px 16px;margin-top:14px;}
+  .hitrate-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--text);}
+  .hitrate-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:8px 0;}
+  .hitrate-bar-fill{height:100%;background:var(--away);}
+  .note{font-size:12px;color:var(--dim);line-height:1.6;margin-top:14px;}
+  .removebtn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;padding:0 4px;}
+  .removebtn:hover{color:var(--unconfirmed);}
+  .divergence-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .divergence-item{font-size:12.5px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--border);border-radius:4px;padding:7px 10px;}  .back-link{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px;
+    color:var(--muted); text-decoration:none; margin-bottom:14px; border-bottom:1px solid transparent;
+  }
+  .back-link:hover{ color:var(--text); border-color:var(--away); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="jacquelyn_zanghi_portfolio.html">← Back to portfolio</a>
+
+  <div class="ticker">
+    <div class="ticker-title"><span class="dot" id="liveDot"></span>WNBA GAME FLOW MOMENTUM</div>
+    <div class="ticker-read" id="tickerRead">no game loaded</div>
+  </div>
+
+  <h1>Game flow, charted like a market</h1>
+  <p class="sub">Pulls each team's live scoring line straight from ESPN's own game-flow data &mdash; no manual inputs, no odds, nothing synthetic. Each team's cumulative score is its own line. The gap between them is the spread. The trailing slope of each line is its scoring rate. A divergence is flagged when the trailing team is scoring faster than the leader while the board margin is still widening &mdash; then the tool checks whether that actually preceded a lead change, so the pattern gets tested against real outcomes instead of just eyeballed.</p>
+
+  <div class="panel">
+    <p class="panel-label">Load a game</p>
+    <div class="row">
+      <div class="field">
+        <label for="dateInput">Date</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field"><button id="loadDateBtn">Fetch games ↗</button></div>
+      <div class="field" style="flex:1;min-width:260px;">
+        <label for="gameSelect">Game</label>
+        <select id="gameSelect" disabled><option>Fetch a date first</option></select>
+      </div>
+      <div class="field"><button class="primary" id="loadGameBtn" disabled>Plot game flow ↗</button></div>
+    </div>
+    <div class="status" id="statusLine">enter a date to pull that day's WNBA slate</div>
+    <div id="liveRefreshWrap" style="display:none;margin-top:10px;">
+      <button id="liveRefreshBtn">Start live refresh (30s) ↗</button>
+      <span id="liveRefreshStatus" style="margin-left:10px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
+    </div>
+    <div id="dayTotalsWrap" style="display:none;margin-top:16px;">
+      <p class="panel-label">Totals for this date — fill in once, applies to every game below</p>
+      <div id="dayTotalsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button id="saveDayTotalsBtn" style="margin-top:10px;">Save totals for this date ↗</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Bulk fetch — build the backtest dataset</p>
+    <p class="sub" style="margin-bottom:14px;">Pulls every completed game for the selected season(s) directly from ESPN and logs them automatically — same as loading a game and hitting "Add to session log," just looped across a whole season. Games already in your log are skipped, so you can re-run this anytime during the season to pick up new games without re-entering anything by hand.</p>
+    <div class="row" id="seasonCheckboxRow" style="margin-bottom:10px;"></div>
+    <div class="row" style="margin-bottom:10px;">
+      <div class="field">
+        <label for="gameTypeSelect">Game type</label>
+        <select id="gameTypeSelect" style="min-width:160px;">
+          <option value="regular" selected>Regular season</option>
+          <option value="postseason">Playoffs</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <button class="primary" id="bulkFetchBtn">Fetch selected seasons ↗</button>
+      <button id="bulkStopBtn" style="display:none;">Stop ↗</button>
+    </div>
+    <div class="status" id="bulkStatus" style="margin-top:10px;">pick one or more seasons and a game type above</div>
+    <div class="progress-bar" style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px;max-width:400px;"><div id="bulkProgressFill" style="height:100%;background:var(--away);width:0%;"></div></div>
+  </div>
+
+  <div class="panel" id="chartPanel" style="display:none;">
+    <p class="panel-label" id="chartTitle">Team lines &amp; spread</p>
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--away)"></span><span id="legendAway">Away score line</span></div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--home)"></span><span id="legendHome">Home score line</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--unconfirmed)"></span>Lead change</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--away);opacity:0.5;"></span>Divergence flag</div>
+    </div>
+  </div>
+
+  <div class="panel" id="pacePanelWrap" style="display:none;">
+    <p class="panel-label">Pace vs. opening total</p>
+    <div class="cards" id="paceCards"></div>
+  </div>
+
+  <div class="panel" id="liveLineWrap" style="display:none;">
+    <p class="panel-label">Live line check</p>
+    <p class="sub" style="margin-bottom:14px;">Compares the game's current pace bucket against a live total you enter — type in whatever DraftKings (or your book) is currently showing during the Q1 or halftime break, and this shows the gap between that number and where your logged pattern says the game tends to land.</p>
+    <div class="row" style="margin-bottom:10px;">
+      <div class="field">
+        <label for="liveTotalInput">Current live total</label>
+        <input type="number" id="liveTotalInput" step="0.5" autocomplete="off" placeholder="e.g. 158.5" style="width:120px;">
+      </div>
+      <div class="field"><button class="primary" id="checkLiveLineBtn">Check gap ↗</button></div>
+      <div class="field"><button id="refreshEspnTotalBtn">Try ESPN's current total ↗</button></div>
+    </div>
+    <div id="liveLineResult"></div>
+  </div>
+
+  <div class="panel" id="multiBookWrap" style="display:none;">
+    <p class="panel-label">Compare across books — SportsGameOdds</p>
+    <p class="sub" style="margin-bottom:14px;">First pass at pulling live totals across multiple sportsbooks for this game. Shows raw data alongside a best-effort parsed table, since the exact response shape hasn't been verified against a live key yet — if the table looks wrong or empty, the raw view below will show what actually came back so it can be fixed.</p>
+    <div class="row" style="margin-bottom:10px;">
+      <div class="field">
+        <label for="sgoApiKeyInput">SportsGameOdds API key</label>
+        <input type="password" id="sgoApiKeyInput" autocomplete="off" placeholder="paste your key" style="width:220px;">
+      </div>
+      <div class="field"><button id="saveSgoKeyBtn">Save key ↗</button></div>
+      <div class="field"><button class="primary" id="fetchMultiBookBtn">Compare across books ↗</button></div>
+    </div>
+    <div class="status" id="multiBookStatus"></div>
+    <div id="multiBookResult" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="panel" id="momentumPanelWrap" style="display:none;">
+    <p class="panel-label">Momentum checkpoints</p>
+    <div class="cards" id="momentumCards"></div>
+    <p class="panel-label" style="margin-top:18px;">Divergence signals this game</p>
+    <div class="divergence-list" id="divergenceList"></div>
+    <div class="row" style="margin-top:14px;">
+      <button id="addLogBtn">Add game to session log ↗</button>
+    </div>
+  </div>
+
+  <div class="panel" id="patternPanelWrap" style="display:none;">
+    <p class="panel-label">Pattern match against saved games</p>
+    <p class="sub" style="margin-bottom:14px;">Compares this game's margin curve (home minus away, over time) against every game in your session log and ranks by how closely the shapes track over the time both games have in common — the closest analog to eyeballing an overlay.</p>
+    <button id="findMatchesBtn">Find closest matches ↗</button>
+    <div id="matchResults" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Similar games across your whole dataset</p>
+    <p class="sub" style="margin-bottom:14px;">Compares every logged game against every other logged game and surfaces the pairs with the most similar margin curves — a way to spot recurring shapes without needing a specific game loaded first.</p>
+    <button id="findDatasetPairsBtn">Find similar pairs ↗</button>
+    <div id="datasetPairsResults" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Session log — does the divergence signal actually work</p>
+    <div class="row" style="margin-bottom:12px;">
+      <button id="exportLogBtn">Export log ↗</button>
+      <button id="importLogBtn">Import log ↗</button>
+      <input type="file" id="importLogFile" accept="application/json" style="display:none;">
+    </div>
+    <div id="logTableWrap"><div class="empty">no games logged yet — plot a game above, then add it to the log</div></div>
+    <div id="hitrateWrap"></div>
+    <p class="note">Every number here comes straight from ESPN's play-by-play for real, completed games — nothing simulated. A signal is scored "confirmed" if a lead change happened within 6 minutes of the flag. Session log lives in this page only and clears on refresh — export it if you don't want to lose your work.</p>
+  </div>
+
+  <div class="panel" id="paceAnalysisWrap" style="display:none;">
+    <p class="panel-label">Opening line divergence patterns</p>
+    <p class="sub" style="margin-bottom:14px;">Only uses games in your session log where you entered an opening total. Buckets games by how far the combined score was running above or below the pace that total implied at a given checkpoint, then shows what actually happened by final.</p>
+    <div class="field" style="margin-bottom:12px;max-width:200px;">
+      <label for="checkpointSelect">Checkpoint</label>
+      <select id="checkpointSelect">
+        <option value="10">Q1</option>
+        <option value="20" selected>Half</option>
+        <option value="30">Q3</option>
+      </select>
+    </div>
+    <div id="bucketTableWrap"></div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-label">Analysis lab</p>
+    <p class="sub" style="margin-bottom:14px;">Pick a pattern to test against everything in your session log. Each one runs fresh off the logged games — nothing cached, nothing simulated.</p>
+    <div class="row" style="margin-bottom:4px;">
+      <div class="field" style="flex:1;min-width:260px;">
+        <label for="analysisSelect">Analysis type</label>
+        <select id="analysisSelect">
+          <optgroup label="Opening line patterns">
+            <option value="singleCheckpoint">Single checkpoint — non-compounding divergence</option>
+            <option value="comboCheckpoints">Checkpoint combo — compounding divergence</option>
+            <option value="closingAccuracy">Total closing accuracy</option>
+          </optgroup>
+          <optgroup label="Market-style patterns">
+            <option value="maCross">Moving average crossover (momentum)</option>
+            <option value="meanReversion">Mean reversion after an extreme run</option>
+            <option value="breakout">Breakout continuation</option>
+          </optgroup>
+          <optgroup label="Game-stat patterns">
+            <option value="comeback">Comeback rate — trailing at half</option>
+            <option value="volatility">Lead changes vs. final margin</option>
+            <option value="firstLead">First team to lead → win rate</option>
+            <option value="homeEdge">Home vs. away scoring momentum</option>
+            <option value="quarterPace">Which quarter runs hottest / coldest</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field"><button class="primary" id="runAnalysisBtn">Run analysis ↗</button></div>
+    </div>
+    <div id="analysisResults" style="margin-top:12px;"></div>
+  </div>
+
+</div>
+
+<script>
+const dateInput = document.getElementById('dateInput');
+const gameSelect = document.getElementById('gameSelect');
+const loadDateBtn = document.getElementById('loadDateBtn');
+const loadGameBtn = document.getElementById('loadGameBtn');
+const statusLine = document.getElementById('statusLine');
+const chartPanel = document.getElementById('chartPanel');
+const chartTitle = document.getElementById('chartTitle');
+const legendAway = document.getElementById('legendAway');
+const legendHome = document.getElementById('legendHome');
+const momentumPanelWrap = document.getElementById('momentumPanelWrap');
+const momentumCards = document.getElementById('momentumCards');
+const divergenceList = document.getElementById('divergenceList');
+const addLogBtn = document.getElementById('addLogBtn');
+const logTableWrap = document.getElementById('logTableWrap');
+const hitrateWrap = document.getElementById('hitrateWrap');
+const tickerRead = document.getElementById('tickerRead');
+const liveDot = document.getElementById('liveDot');
+const canvas = document.getElementById('chart');
+const patternPanelWrap = document.getElementById('patternPanelWrap');
+const findMatchesBtn = document.getElementById('findMatchesBtn');
+const matchResults = document.getElementById('matchResults');
+const findDatasetPairsBtn = document.getElementById('findDatasetPairsBtn');
+const datasetPairsResults = document.getElementById('datasetPairsResults');
+const dayTotalsWrap = document.getElementById('dayTotalsWrap');
+const liveRefreshWrap = document.getElementById('liveRefreshWrap');
+const liveRefreshBtn = document.getElementById('liveRefreshBtn');
+const liveRefreshStatus = document.getElementById('liveRefreshStatus');
+let liveRefreshTimer = null;
+let liveRefreshEventId = null;
+const dayTotalsList = document.getElementById('dayTotalsList');
+const saveDayTotalsBtn = document.getElementById('saveDayTotalsBtn');
+const seasonCheckboxRow = document.getElementById('seasonCheckboxRow');
+const gameTypeSelect = document.getElementById('gameTypeSelect');
+const bulkFetchBtn = document.getElementById('bulkFetchBtn');
+const bulkStopBtn = document.getElementById('bulkStopBtn');
+const bulkStatus = document.getElementById('bulkStatus');
+const bulkProgressFill = document.getElementById('bulkProgressFill');
+let bulkStopFlag = false;
+const pacePanelWrap = document.getElementById('pacePanelWrap');
+const paceCards = document.getElementById('paceCards');
+const liveLineWrap = document.getElementById('liveLineWrap');
+const liveTotalInput = document.getElementById('liveTotalInput');
+const checkLiveLineBtn = document.getElementById('checkLiveLineBtn');
+const refreshEspnTotalBtn = document.getElementById('refreshEspnTotalBtn');
+const multiBookWrap = document.getElementById('multiBookWrap');
+const sgoApiKeyInput = document.getElementById('sgoApiKeyInput');
+const saveSgoKeyBtn = document.getElementById('saveSgoKeyBtn');
+const fetchMultiBookBtn = document.getElementById('fetchMultiBookBtn');
+const multiBookStatus = document.getElementById('multiBookStatus');
+const multiBookResult = document.getElementById('multiBookResult');
+const liveLineResult = document.getElementById('liveLineResult');
+const paceAnalysisWrap = document.getElementById('paceAnalysisWrap');
+const checkpointSelect = document.getElementById('checkpointSelect');
+const bucketTableWrap = document.getElementById('bucketTableWrap');
+const analysisSelect = document.getElementById('analysisSelect');
+const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+const analysisResults = document.getElementById('analysisResults');
+const exportLogBtn = document.getElementById('exportLogBtn');
+const importLogBtn = document.getElementById('importLogBtn');
+const importLogFile = document.getElementById('importLogFile');
+
+let currentGame = null;
+let dayTotals = {};
+let sessionLog = [];
+
+let dbPromise = null;
+function getDB(){
+  if(!dbPromise){
+    dbPromise = new Promise((resolve,reject)=>{
+      const req = indexedDB.open('wnba_pace_terminal', 1);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if(!d.objectStoreNames.contains('games')){
+          d.createObjectStore('games', {keyPath:'id'});
+        }
+      };
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+  return dbPromise;
+}
+async function dbGetAll(){
+  const database = await getDB();
+  return new Promise((resolve,reject)=>{
+    const tx = database.transaction('games','readonly');
+    const req = tx.objectStore('games').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbPut(game){
+  const database = await getDB();
+  return new Promise((resolve,reject)=>{
+    const tx = database.transaction('games','readwrite');
+    tx.objectStore('games').put(game);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbPutMany(games){
+  if(games.length === 0) return;
+  const database = await getDB();
+  return new Promise((resolve,reject)=>{
+    const tx = database.transaction('games','readwrite');
+    const store = tx.objectStore('games');
+    games.forEach(g=>store.put(g));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbDelete(id){
+  const database = await getDB();
+  return new Promise((resolve,reject)=>{
+    const tx = database.transaction('games','readwrite');
+    tx.objectStore('games').delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+dateInput.value = todayStr();
+
+(async () => {
+  try{
+    sessionLog = await dbGetAll();
+    if(sessionLog.length === 0){
+      try{
+        const raw = localStorage.getItem('wnba_session_log');
+        if(raw){
+          const legacy = JSON.parse(raw);
+          if(Array.isArray(legacy) && legacy.length > 0){
+            await dbPutMany(legacy);
+            sessionLog = legacy;
+            setStatus('migrated '+legacy.length+' games from old browser storage to the new database — you should have more room now.','ok');
+          }
+        }
+      }catch(migrateErr){}
+    }
+    if(sessionLog.length > 0) renderLog();
+  }catch(e){
+    setStatus('could not open local database for saved games — '+e.message,'err');
+  }
+})();
+
+function currentWnbaSeasonYear(){
+  return new Date().getFullYear();
+}
+function renderSeasonCheckboxes(){
+  const recent = currentWnbaSeasonYear();
+  let html = '';
+  for(let i=0;i<5;i++){
+    const year = recent - i;
+    html += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" class="seasonCheckbox" value="'+year+'"'+(i===0?' checked':'')+'> '+year+'</label>';
+  }
+  seasonCheckboxRow.innerHTML = html;
+}
+renderSeasonCheckboxes();
+
+function setStatus(msg, kind){
+  statusLine.textContent = msg;
+  statusLine.className = 'status' + (kind ? ' '+kind : '');
+}
+function fmtDateForEspn(dateStr){ return dateStr.replace(/-/g,''); }
+
+loadDateBtn.addEventListener('click', async () => {
+  const d = dateInput.value;
+  if(!d){ setStatus('pick a date first','err'); return; }
+  stopLiveRefresh();
+  liveRefreshWrap.style.display = 'none';
+  setStatus('fetching WNBA scoreboard for '+d+' ...');
+  gameSelect.disabled = true;
+  gameSelect.innerHTML = '<option>Loading...</option>';
+  try{
+    const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates='+fmtDateForEspn(d);
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const events = data.events || [];
+    if(events.length === 0){
+      gameSelect.innerHTML = '<option>No games this date</option>';
+      setStatus('no WNBA games found on '+d,'err');
+      return;
+    }
+    gameSelect.innerHTML = '';
+    dayTotalsList.innerHTML = '';
+    events.forEach(ev => {
+      const comp = ev.competitions[0];
+      const home = comp.competitors.find(c=>c.homeAway==='home');
+      const away = comp.competitors.find(c=>c.homeAway==='away');
+      const final = comp.status.type.completed;
+      const label = away.team.abbreviation+' @ '+home.team.abbreviation
+        + (final ? '  ('+away.score+'-'+home.score+' final)' : '  ('+comp.status.type.shortDetail+')');
+      const opt = document.createElement('option');
+      opt.value = ev.id;
+      opt.dataset.away = away.team.abbreviation;
+      opt.dataset.home = home.team.abbreviation;
+      opt.dataset.name = away.team.displayName+' at '+home.team.displayName;
+      opt.dataset.final = final ? '1' : '0';
+      opt.dataset.awayScore = away.score;
+      opt.dataset.homeScore = home.score;
+      opt.textContent = label;
+      gameSelect.appendChild(opt);
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+      const existing = dayTotals[ev.id];
+      row.innerHTML =
+        '<span style="font-family:JetBrains Mono,monospace;font-size:12.5px;color:var(--muted);width:170px;flex-shrink:0;">'+away.team.abbreviation+' @ '+home.team.abbreviation+'</span>'+
+        '<input type="number" step="0.5" autocomplete="off" data-event-id="'+ev.id+'" class="dayTotalInput" style="width:100px;" value="'+(existing||'')+'" placeholder="e.g. 164.5">'+
+        '<span class="dayTotalSrc" data-event-id="'+ev.id+'" style="font-size:11.5px;color:var(--dim);"></span>';
+      dayTotalsList.appendChild(row);
+
+      fetch('https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/events/'+ev.id+'/competitions/'+ev.id+'/odds')
+        .then(r => r.ok ? r.json() : null)
+        .then(oddsData => {
+          if(!oddsData) return;
+          const items = oddsData.items || [];
+          let coreOdds = items.find(o => o.provider && /draftkings/i.test(o.provider.name));
+          if(!coreOdds) coreOdds = items[0];
+          if(coreOdds && typeof coreOdds.overUnder === 'number'){
+            const input = dayTotalsList.querySelector('input[data-event-id="'+ev.id+'"]');
+            const srcLabel = dayTotalsList.querySelector('.dayTotalSrc[data-event-id="'+ev.id+'"]');
+            if(input && !input.value){
+              input.value = coreOdds.overUnder;
+              if(srcLabel) srcLabel.textContent = 'from '+(coreOdds.provider ? coreOdds.provider.name : 'ESPN');
+            }
+          }
+        })
+        .catch(()=>{});
+    });
+    dayTotalsWrap.style.display = 'block';
+    gameSelect.disabled = false;
+    loadGameBtn.disabled = false;
+    setStatus(events.length+' game(s) found. Fill in totals below if you have them, or pick a game and plot — auto-fill from ESPN will try in the background.','ok');
+  }catch(err){
+    setStatus('could not reach ESPN (network settings or CORS may be blocking this) — '+err.message,'err');
+    gameSelect.innerHTML = '<option>Fetch failed</option>';
+  }
+});
+
+saveDayTotalsBtn.addEventListener('click', () => {
+  const inputs = dayTotalsList.querySelectorAll('.dayTotalInput');
+  let saved = 0;
+  inputs.forEach(inp => {
+    const val = parseFloat(inp.value);
+    const id = inp.dataset.eventId;
+    if(val){ dayTotals[id] = val; saved++; }
+    else { delete dayTotals[id]; }
+  });
+  setStatus('saved '+saved+' total(s) for this date — they\'ll apply automatically when you plot each game.','ok');
+});
+
+function parseClock(display){
+  const parts = display.split(':');
+  return parseInt(parts[0],10) + parseInt(parts[1]||'0',10)/60;
+}
+function elapsedMinutes(period, clockDisplay){
+  const remaining = parseClock(clockDisplay);
+  let prior = 0;
+  for(let p=1;p<period;p++){ prior += (p<=4) ? 10 : 5; }
+  const periodLength = (period<=4) ? 10 : 5;
+  return prior + (periodLength - remaining);
+}
+
+function cleanPoints(rawPoints){
+  if(rawPoints.length === 0) return rawPoints;
+  const maxJump = 8;
+  const cleaned = [rawPoints[0]];
+  for(let i=1;i<rawPoints.length;i++){
+    const prev = cleaned[cleaned.length-1];
+    const cur = rawPoints[i];
+    const homeJump = cur.home - prev.home;
+    const awayJump = cur.away - prev.away;
+    if(homeJump < 0 || awayJump < 0) continue;
+    if(homeJump > maxJump || awayJump > maxJump) continue;
+    cleaned.push(cur);
+  }
+  return cleaned;
+}
+
+async function fetchGameForLog(ev, seasonYear, dateStr){
+  const comp = ev.competitions[0];
+  const home = comp.competitors.find(c=>c.homeAway==='home');
+  const away = comp.competitors.find(c=>c.homeAway==='away');
+  const eventId = ev.id;
+
+  const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary?event='+eventId;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  const plays = data.plays || [];
+  if(plays.length === 0) throw new Error('no play-by-play');
+
+  const points = [{t:0, away:0, home:0}];
+  let maxT = 40;
+  plays.forEach(p => {
+    if(p.awayScore == null || p.homeScore == null || !p.period) return;
+    const t = elapsedMinutes(p.period.number, p.clock ? p.clock.displayValue : '0:00');
+    points.push({t: Math.max(0,t), away: p.awayScore||0, home: p.homeScore||0});
+    if(t > maxT) maxT = t;
+  });
+  points.sort((a,b)=>a.t-b.t);
+  const points_clean = cleanPoints(points);
+
+  const trueAway = parseFloat(away.score);
+  const trueHome = parseFloat(home.score);
+  if(!isNaN(trueAway) && !isNaN(trueHome)){
+    const lastPt = points_clean[points_clean.length-1];
+    if(lastPt.away !== trueAway || lastPt.home !== trueHome){
+      points_clean.push({t: maxT, away: trueAway, home: trueHome});
+    }
+  }
+  const last = points_clean[points_clean.length-1];
+
+  const pickcenter = data.pickcenter || [];
+  let dkOdds = pickcenter.find(o => o.provider && /draftkings/i.test(o.provider.name));
+  if(!dkOdds) dkOdds = pickcenter[0];
+  const espnTotal = dkOdds && typeof dkOdds.overUnder === 'number' ? dkOdds.overUnder : null;
+  const espnBookName = dkOdds && dkOdds.provider ? dkOdds.provider.name : null;
+  const openingTotal = espnTotal;
+  const totalSource = espnTotal ? ('espn:' + (espnBookName || 'book')) : null;
+
+  const divergences = findDivergences(points_clean, maxT);
+  const crossings = findCrossovers(points_clean, maxT);
+  const confirmedCount = divergences.filter(d => confirmDivergence(points_clean, maxT, d)).length;
+
+  return {
+    id: eventId,
+    name: away.team.displayName+' at '+home.team.displayName,
+    date: dateStr,
+    season: String(seasonYear),
+    awayAbbr: away.team.abbreviation,
+    homeAbbr: home.team.abbreviation,
+    points: points_clean,
+    maxT,
+    finalAway: last.away,
+    finalHome: last.home,
+    openingTotal,
+    totalSource,
+    crossings: crossings.length,
+    signals: divergences.length,
+    confirmed: confirmedCount
+  };
+}
+
+async function fetchTotalOnly(eventId){
+  const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary?event='+eventId;
+  const res = await fetch(url);
+  if(!res.ok) return null;
+  const data = await res.json();
+  const pickcenter = data.pickcenter || [];
+  let dkOdds = pickcenter.find(o => o.provider && /draftkings/i.test(o.provider.name));
+  if(!dkOdds) dkOdds = pickcenter[0];
+  let espnTotal = dkOdds && typeof dkOdds.overUnder === 'number' ? dkOdds.overUnder : null;
+  let espnBookName = dkOdds && dkOdds.provider ? dkOdds.provider.name : null;
+  if(espnTotal === null){
+    try{
+      const oddsUrl = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/events/'+eventId+'/competitions/'+eventId+'/odds';
+      const oddsRes = await fetch(oddsUrl);
+      if(oddsRes.ok){
+        const oddsData = await oddsRes.json();
+        const items = oddsData.items || [];
+        let coreOdds = items.find(o => o.provider && /draftkings/i.test(o.provider.name));
+        if(!coreOdds) coreOdds = items[0];
+        if(coreOdds && typeof coreOdds.overUnder === 'number'){
+          espnTotal = coreOdds.overUnder;
+          espnBookName = coreOdds.provider ? coreOdds.provider.name : 'book';
+        }
+      }
+    }catch(e){}
+  }
+  if(espnTotal === null) return null;
+  return { openingTotal: espnTotal, totalSource: 'espn:' + (espnBookName || 'book') };
+}
+
+async function fetchSeasonGames(seasonYear, existingMap, gameType){
+  bulkStatus.textContent = 'reading '+seasonYear+' season calendar ('+gameType+')...';
+
+  const regularAnchor = seasonYear+'0615';
+  const postseasonAnchor = seasonYear+'0925';
+  const anchorDate = gameType === 'postseason' ? postseasonAnchor : regularAnchor;
+  const seasontype = gameType === 'postseason' ? 3 : 2;
+
+  async function getCalendar(anchorDate, seasontype){
+    const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates='+anchorDate+'&seasontype='+seasontype;
+    const res = await fetch(url);
+    if(!res.ok) return [];
+    const data = await res.json();
+    const calendar = (data.leagues && data.leagues[0] && data.leagues[0].calendar) || [];
+    return calendar.map(c => c.slice(0,10));
+  }
+
+  const dateEntries = (await getCalendar(anchorDate, seasontype))
+    .map(d => ({date:d, type:gameType}))
+    .filter(e => e.date <= todayStr());
+  if(dateEntries.length === 0) throw new Error('no '+gameType+' calendar dates found for this season');
+
+  let pendingBatch = [];
+  let added = 0, skipped = 0, failed = 0, patched = 0;
+
+  for(let di=0; di<dateEntries.length; di++){
+    if(bulkStopFlag) break;
+    const {date: d, type: entryGameType} = dateEntries[di];
+    bulkProgressFill.style.width = Math.round(100*di/dateEntries.length)+'%';
+    bulkStatus.textContent = seasonYear+' season ('+entryGameType+'): '+d+' ('+(di+1)+'/'+dateEntries.length+') — '+added+' added, '+patched+' totals filled in, '+skipped+' skipped, '+failed+' failed';
+    try{
+      const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates='+fmtDateForEspn(d);
+      const res = await fetch(url);
+      if(!res.ok) continue;
+      const data = await res.json();
+      const events = (data.events || []).filter(ev => ev.competitions[0].status.type.completed);
+      for(const ev of events){
+        if(bulkStopFlag) break;
+        const existing = existingMap.get(ev.id);
+        if(existing){
+          if(existing.openingTotal){ skipped++; continue; }
+          try{
+            const totalInfo = await fetchTotalOnly(ev.id);
+            if(totalInfo){
+              existing.openingTotal = totalInfo.openingTotal;
+              existing.totalSource = totalInfo.totalSource;
+              pendingBatch.push(existing);
+              patched++;
+              if(pendingBatch.length >= 20){ await dbPutMany(pendingBatch); pendingBatch = []; }
+            } else {
+              skipped++;
+            }
+          }catch(patchErr){
+            failed++;
+          }
+          await new Promise(r=>setTimeout(r, 120));
+          continue;
+        }
+        try{
+          const record = await fetchGameForLog(ev, seasonYear, d);
+          record.gameType = entryGameType;
+          sessionLog.push(record);
+          pendingBatch.push(record);
+          existingMap.set(ev.id, record);
+          added++;
+          if(pendingBatch.length >= 20){ await dbPutMany(pendingBatch); pendingBatch = []; }
+        }catch(gameErr){
+          failed++;
+        }
+        await new Promise(r=>setTimeout(r, 120));
+      }
+    }catch(dateErr){
+      failed++;
+    }
+    await new Promise(r=>setTimeout(r, 100));
+  }
+  await dbPutMany(pendingBatch);
+  return { added, patched, skipped, failed };
+}
+
+bulkFetchBtn.addEventListener('click', async () => {
+  const checked = Array.from(document.querySelectorAll('.seasonCheckbox:checked')).map(c=>parseInt(c.value,10));
+  if(checked.length === 0){ bulkStatus.textContent = 'check at least one season first'; return; }
+  const gameType = gameTypeSelect.value;
+  bulkFetchBtn.disabled = true;
+  bulkStopBtn.style.display = 'inline-block';
+  bulkStopFlag = false;
+  const existingMap = new Map(sessionLog.map(g=>[g.id, g]));
+  let totalAdded = 0, totalPatched = 0, totalSkipped = 0, totalFailed = 0;
+  for(const season of checked.sort((a,b)=>b-a)){
+    if(bulkStopFlag) break;
+    try{
+      const result = await fetchSeasonGames(season, existingMap, gameType);
+      totalAdded += result.added; totalPatched += result.patched; totalSkipped += result.skipped; totalFailed += result.failed;
+    }catch(err){
+      bulkStatus.textContent = season+' season ('+gameType+') failed: '+err.message;
+    }
+  }
+  bulkProgressFill.style.width = '100%';
+  bulkStatus.textContent = bulkStopFlag
+    ? 'stopped — '+totalAdded+' '+gameType+' games added, '+totalPatched+' totals filled in, '+totalSkipped+' skipped, '+totalFailed+' failed'
+    : 'done — '+totalAdded+' '+gameType+' games added, '+totalPatched+' totals filled in on existing games, '+totalSkipped+' already complete, '+totalFailed+' failed';
+  bulkFetchBtn.disabled = false;
+  bulkStopBtn.style.display = 'none';
+  renderLog();
+});
+
+bulkStopBtn.addEventListener('click', () => { bulkStopFlag = true; });
+
+async function plotGame(eventId, opt){
+  const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary?event='+eventId;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  const plays = data.plays || [];
+  if(plays.length === 0) throw new Error('no play-by-play available for this game yet');
+
+  const points = [{t:0, away:0, home:0}];
+  let maxT = 40;
+  plays.forEach(p => {
+    if(p.awayScore == null || p.homeScore == null || !p.period) return;
+    const t = elapsedMinutes(p.period.number, p.clock ? p.clock.displayValue : '0:00');
+    points.push({t: Math.max(0,t), away: p.awayScore||0, home: p.homeScore||0});
+    if(t > maxT) maxT = t;
+  });
+  points.sort((a,b)=>a.t-b.t);
+  const points_clean = cleanPoints(points);
+
+  let isLiveFinal = opt.dataset.final === '1';
+  const headerStatus = data.header && data.header.competitions && data.header.competitions[0] && data.header.competitions[0].status;
+  if(headerStatus && headerStatus.type){
+    isLiveFinal = !!headerStatus.type.completed;
+  }
+
+  const trueAway = parseFloat(opt.dataset.awayScore);
+  const trueHome = parseFloat(opt.dataset.homeScore);
+  if(isLiveFinal && !isNaN(trueAway) && !isNaN(trueHome)){
+    const lastPt = points_clean[points_clean.length-1];
+    if(lastPt.away !== trueAway || lastPt.home !== trueHome){
+      points_clean.push({t: maxT, away: trueAway, home: trueHome});
+    }
+  }
+  const last = points_clean[points_clean.length-1];
+
+  const pickcenter = data.pickcenter || [];
+  let dkOdds = pickcenter.find(o => o.provider && /draftkings/i.test(o.provider.name));
+  if(!dkOdds) dkOdds = pickcenter[0];
+  let espnTotal = dkOdds && typeof dkOdds.overUnder === 'number' ? dkOdds.overUnder : null;
+  let espnBookName = dkOdds && dkOdds.provider ? dkOdds.provider.name : null;
+
+  if(espnTotal === null){
+    try{
+      const oddsUrl = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/events/'+eventId+'/competitions/'+eventId+'/odds';
+      const oddsRes = await fetch(oddsUrl);
+      if(oddsRes.ok){
+        const oddsData = await oddsRes.json();
+        const items = oddsData.items || [];
+        let coreOdds = items.find(o => o.provider && /draftkings/i.test(o.provider.name));
+        if(!coreOdds) coreOdds = items[0];
+        if(coreOdds && typeof coreOdds.overUnder === 'number'){
+          espnTotal = coreOdds.overUnder;
+          espnBookName = coreOdds.provider ? coreOdds.provider.name : 'book';
+        }
+      }
+    }catch(oddsErr){}
+  }
+
+  let openingTotal = dayTotals[eventId] || null;
+  let totalSource = openingTotal ? 'saved' : null;
+  if(!openingTotal && espnTotal){
+    openingTotal = espnTotal;
+    totalSource = 'espn:' + (espnBookName || 'book');
+    dayTotals[eventId] = espnTotal;
+    const savedInput = dayTotalsList.querySelector('input[data-event-id="'+eventId+'"]');
+    if(savedInput && !savedInput.value) savedInput.value = espnTotal;
+  }
+
+  currentGame = {
+    id: eventId,
+    shortLabel: opt.textContent,
+    awayAbbr: opt.dataset.away,
+    homeAbbr: opt.dataset.home,
+    name: opt.dataset.name,
+    date: dateInput.value,
+    season: dateInput.value ? dateInput.value.slice(0,4) : null,
+    points: points_clean,
+    maxT,
+    finalAway: last.away,
+    finalHome: last.home,
+    openingTotal,
+    totalSource,
+    isLiveFinal
+  };
+
+  legendAway.textContent = currentGame.awayAbbr + ' score line';
+  legendHome.textContent = currentGame.homeAbbr + ' score line';
+  chartTitle.textContent = currentGame.shortLabel + ' — team lines & spread';
+  chartPanel.style.display = 'block';
+  momentumPanelWrap.style.display = 'block';
+  drawChart(currentGame);
+  drawMomentum(currentGame);
+  patternPanelWrap.style.display = sessionLog.length ? 'block' : 'none';
+  matchResults.innerHTML = '';
+  if(openingTotal){
+    pacePanelWrap.style.display = 'block';
+    drawPaceCards(currentGame);
+    liveLineWrap.style.display = 'block';
+    liveLineResult.innerHTML = '';
+    liveTotalInput.value = '';
+    multiBookWrap.style.display = 'block';
+    multiBookResult.innerHTML = '';
+  } else {
+    pacePanelWrap.style.display = 'none';
+    liveLineWrap.style.display = 'none';
+    multiBookWrap.style.display = 'none';
+  }
+  liveDot.classList.add('live');
+  const totalLabel = openingTotal
+    ? (totalSource === 'manual' ? ' &middot; total '+openingTotal+' (entered)' : ' &middot; total '+openingTotal+' ('+espnBookName+' via ESPN)')
+    : '';
+  const scoreLabel = isLiveFinal ? 'final' : 'live';
+  tickerRead.innerHTML = '<b>'+currentGame.shortLabel+'</b> &middot; '+scoreLabel+' '+currentGame.awayAbbr+' '+currentGame.finalAway+' - '+currentGame.homeAbbr+' '+currentGame.finalHome
+    + totalLabel;
+  return isLiveFinal;
+}
+
+loadGameBtn.addEventListener('click', async () => {
+  const eventId = gameSelect.value;
+  const opt = gameSelect.options[gameSelect.selectedIndex];
+  if(!eventId){ setStatus('pick a game first','err'); return; }
+  setStatus('fetching play-by-play for this game ...');
+  loadGameBtn.disabled = true;
+  stopLiveRefresh();
+  try{
+    const isLiveFinal = await plotGame(eventId, opt);
+    if(isLiveFinal){
+      liveRefreshWrap.style.display = 'none';
+      setStatus('plotted (final). add it to the session log to test the divergence signal.','ok');
+    } else {
+      liveRefreshWrap.style.display = 'block';
+      liveRefreshEventId = eventId;
+      liveRefreshBtn.textContent = 'Start live refresh (30s) ↗';
+      liveRefreshStatus.textContent = 'game is still in progress';
+      setStatus('plotted. this game is still live — use the live refresh toggle below to keep it updating.','ok');
+    }
+  }catch(err){
+    setStatus('failed to load play-by-play — '+err.message,'err');
+  }finally{
+    loadGameBtn.disabled = false;
+  }
+});
+
+function stopLiveRefresh(){
+  if(liveRefreshTimer){
+    clearInterval(liveRefreshTimer);
+    liveRefreshTimer = null;
+  }
+  liveRefreshBtn.textContent = 'Start live refresh (30s) ↗';
+}
+
+liveRefreshBtn.addEventListener('click', () => {
+  if(liveRefreshTimer){
+    stopLiveRefresh();
+    liveRefreshStatus.textContent = 'live refresh stopped';
+    return;
+  }
+  if(!liveRefreshEventId) return;
+  liveRefreshBtn.textContent = 'Stop live refresh ↗';
+  liveRefreshStatus.textContent = 'refreshing every 30s — last update just now';
+  liveRefreshTimer = setInterval(async () => {
+    try{
+      const opt = Array.from(gameSelect.options).find(o => o.value === liveRefreshEventId);
+      if(!opt) { stopLiveRefresh(); return; }
+      const isLiveFinal = await plotGame(liveRefreshEventId, opt);
+      const now = new Date();
+      liveRefreshStatus.textContent = 'refreshing every 30s — last update at '+now.toLocaleTimeString();
+      if(isLiveFinal){
+        stopLiveRefresh();
+        liveRefreshStatus.textContent = 'game finished — live refresh stopped automatically';
+      }
+    }catch(err){
+      liveRefreshStatus.textContent = 'refresh failed: '+err.message;
+    }
+  }, 30000);
+});
+
+function valueAt(points, key, t){
+  let last = points[0];
+  for(const p of points){ if(p.t <= t) last = p; else break; }
+  return last[key];
+}
+function combinedAt(points, t){
+  return valueAt(points,'home',t) + valueAt(points,'away',t);
+}
+function paceAt(t, openingTotal){
+  return (openingTotal/40) * t;
+}
+function paceDiff(game, t){
+  return combinedAt(game.points, t) - paceAt(t, game.openingTotal);
+}
+function drawPaceCards(game){
+  if(!game.openingTotal){ paceCards.innerHTML = ''; return; }
+  const marks = [{label:'Q1',t:10},{label:'Half',t:20},{label:'Q3',t:30},{label:'Final',t:game.maxT}];
+  paceCards.innerHTML = '';
+  marks.forEach(m=>{
+    const actual = combinedAt(game.points, m.t);
+    const pace = paceAt(m.t, game.openingTotal);
+    const diff = actual - pace;
+    const cls = diff >= 0 ? 'home' : 'away';
+    const card = document.createElement('div');
+    card.className = 'cp-card';
+    card.innerHTML =
+      '<div class="cp-label">'+m.label+'</div>'+
+      '<div class="cp-val '+cls+'">'+(diff>=0?'+':'')+diff.toFixed(1)+'</div>'+
+      '<div class="cp-sub">actual '+actual.toFixed(0)+' vs pace '+pace.toFixed(1)+'</div>';
+    paceCards.appendChild(card);
+  });
+}
+
+function nearestPassedCheckpoint(maxT){
+  if(maxT >= 30) return {label:'Q3', t:30};
+  if(maxT >= 20) return {label:'Half', t:20};
+  if(maxT >= 10) return {label:'Q1', t:10};
+  return null;
+}
+
+function getBucketStats(checkpointT, bucketDiff){
+  const label = bucketLabel(bucketDiff);
+  const withTotals = sessionLog.filter(g => g.openingTotal && g.maxT >= checkpointT);
+  const results = [];
+  withTotals.forEach(g=>{
+    const diff = combinedAt(g.points, checkpointT) - paceAt(checkpointT, g.openingTotal);
+    if(Math.abs(diff) < 1) return;
+    if(bucketLabel(diff) !== label) return;
+    const finalDiff = (g.finalAway+g.finalHome) - g.openingTotal;
+    const finalResult = Math.abs(finalDiff) < 0.5 ? 'push' : (finalDiff>0?'over':'under');
+    results.push({finalResult, finalDiff});
+  });
+  return {label, results};
+}
+
+function renderLiveLineCheck(){
+  if(!currentGame || !currentGame.openingTotal) return;
+  const liveTotal = parseFloat(liveTotalInput.value);
+  if(!liveTotal){ liveLineResult.innerHTML = '<div class="empty">enter the current live total first</div>'; return; }
+  const cp = nearestPassedCheckpoint(currentGame.maxT);
+  if(!cp){ liveLineResult.innerHTML = '<div class="empty">not far enough into the game yet — wait until at least end of Q1</div>'; return; }
+  const actual = combinedAt(currentGame.points, cp.t);
+  const pace = paceAt(cp.t, currentGame.openingTotal);
+  const diff = actual - pace;
+  if(Math.abs(diff) < 1){
+    liveLineResult.innerHTML = '<div class="empty">game is running almost exactly on pace at '+cp.label+' — no bucket signal right now</div>';
+    return;
+  }
+  const {label, results} = getBucketStats(cp.t, diff);
+  if(results.length === 0){
+    liveLineResult.innerHTML = '<div class="empty">no logged games in the "'+label+'" bucket at '+cp.label+' yet — not enough history to compare</div>';
+    return;
+  }
+  const n = results.length;
+  const overN = results.filter(r=>r.finalResult==='over').length;
+  const underN = results.filter(r=>r.finalResult==='under').length;
+  const avgDiff = results.reduce((s,r)=>s+r.finalDiff,0)/n;
+  const projectedFinal = currentGame.openingTotal + avgDiff;
+  const bookMove = liveTotal - currentGame.openingTotal;
+  const remainingGap = projectedFinal - liveTotal;
+
+  let interpretation;
+  if(Math.abs(remainingGap) < 2){
+    interpretation = 'The live total is already close to where this bucket historically lands — not much room left based on your data.';
+  } else if((diff > 0 && remainingGap > 0) || (diff < 0 && remainingGap < 0)){
+    interpretation = 'The live total hasn\'t moved as far as this bucket\'s historical average outcome yet — there may still be a gap here.';
+  } else {
+    interpretation = 'The live total has already moved past where this bucket historically lands, on average.';
+  }
+
+  liveLineResult.innerHTML =
+    '<div class="hitrate">'+
+      '<div class="cp-label">'+cp.label+' — '+label+' ('+actual.toFixed(0)+' actual vs '+pace.toFixed(1)+' pace, '+(diff>=0?'+':'')+diff.toFixed(1)+')</div>'+
+      '<div class="cp-sub">'+n+' logged games in this bucket at '+cp.label+': '+Math.round(100*overN/n)+'% over, '+Math.round(100*underN/n)+'% under, average final margin '+(avgDiff>=0?'+':'')+avgDiff.toFixed(1)+' pts from opening total</div>'+
+      '<div class="cp-sub" style="margin-top:8px;">Opening total: '+currentGame.openingTotal+' &middot; projected final for this bucket: '+projectedFinal.toFixed(1)+'</div>'+
+      '<div class="cp-sub">Live total entered: '+liveTotal+' &middot; book has moved '+(bookMove>=0?'+':'')+bookMove.toFixed(1)+' pts from opening</div>'+
+      '<div class="cp-val '+(remainingGap>=0?'home':'away')+'" style="margin-top:6px;">'+(remainingGap>=0?'+':'')+remainingGap.toFixed(1)+' pt gap remaining (projected vs. live)</div>'+
+    '</div>'+
+    '<p class="note">'+interpretation+' Sample size on this bucket: '+n+' games — treat under ~10 as noise. This compares against the opening total\'s trajectory, not a guarantee about where the live line "should" be; it\'s a way to see the gap, not a certified edge.</p>';
+}
+
+checkLiveLineBtn.addEventListener('click', renderLiveLineCheck);
+
+refreshEspnTotalBtn.addEventListener('click', async () => {
+  if(!currentGame){ liveLineResult.innerHTML = '<div class="empty">load a game first</div>'; return; }
+  refreshEspnTotalBtn.disabled = true;
+  liveLineResult.innerHTML = '<div class="status">checking ESPN for a current total...</div>';
+  try{
+    const oddsUrl = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/events/'+currentGame.id+'/competitions/'+currentGame.id+'/odds';
+    const res = await fetch(oddsUrl);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const items = data.items || [];
+    let dk = items.find(o => o.provider && /draftkings/i.test(o.provider.name));
+    if(!dk) dk = items[0];
+    if(dk && typeof dk.overUnder === 'number'){
+      liveTotalInput.value = dk.overUnder;
+      liveLineResult.innerHTML = '<div class="empty">ESPN currently shows '+dk.overUnder+' ('+(dk.provider?dk.provider.name:'book')+'). This may just be the opening number, not a true live in-play line — verify against your sportsbook before trusting it, then hit "Check gap."</div>';
+    } else {
+      liveLineResult.innerHTML = '<div class="empty">ESPN didn\'t return a total for this game — enter the live total manually.</div>';
+    }
+  }catch(err){
+    liveLineResult.innerHTML = '<div class="empty">could not reach ESPN\'s odds endpoint — enter the live total manually.</div>';
+  }finally{
+    refreshEspnTotalBtn.disabled = false;
+  }
+});
+
+try{
+  const savedKey = localStorage.getItem('sgo_api_key');
+  if(savedKey) sgoApiKeyInput.value = savedKey;
+}catch(e){}
+
+saveSgoKeyBtn.addEventListener('click', () => {
+  const key = sgoApiKeyInput.value.trim();
+  if(!key){ multiBookStatus.textContent = 'enter a key first'; return; }
+  try{
+    localStorage.setItem('sgo_api_key', key);
+    multiBookStatus.textContent = 'key saved in this browser';
+  }catch(e){
+    multiBookStatus.textContent = 'could not save key — it will still work for this session';
+  }
+});
+
+function teamNamesMatch(a, b){
+  if(!a || !b) return false;
+  const norm = s => s.toLowerCase().replace(/[^a-z]/g,'');
+  const na = norm(a), nb = norm(b);
+  return na.includes(nb) || nb.includes(na);
+}
+
+fetchMultiBookBtn.addEventListener('click', async () => {
+  if(!currentGame){ multiBookStatus.textContent = 'load a game first'; return; }
+  const key = sgoApiKeyInput.value.trim();
+  if(!key){ multiBookStatus.textContent = 'enter your SportsGameOdds API key first'; return; }
+  fetchMultiBookBtn.disabled = true;
+  multiBookStatus.textContent = 'fetching WNBA events from SportsGameOdds...';
+  multiBookResult.innerHTML = '';
+  try{
+    const url = 'https://api.sportsgameodds.com/v2/events/?apiKey='+encodeURIComponent(key)+'&leagueID=WNBA&oddsAvailable=true&limit=50';
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('HTTP '+res.status+' — check your API key and free-tier limits');
+    const data = await res.json();
+    console.log('[wnba-pace-terminal] SportsGameOdds raw response:', data);
+    const events = data.data || data.events || (Array.isArray(data) ? data : []);
+    if(!Array.isArray(events) || events.length === 0){
+      multiBookStatus.textContent = 'no WNBA events with odds returned right now';
+      multiBookResult.innerHTML = '<pre style="white-space:pre-wrap;font-size:11px;color:var(--muted);background:var(--panel-2);padding:10px;border-radius:4px;max-height:300px;overflow:auto;">'+JSON.stringify(data,null,2).slice(0,4000)+'</pre>';
+      return;
+    }
+
+    let matched = null;
+    for(const ev of events){
+      const home = ev.teams?.home?.names?.long || ev.homeTeam?.name || ev.home?.name || '';
+      const away = ev.teams?.away?.names?.long || ev.awayTeam?.name || ev.away?.name || '';
+      if(teamNamesMatch(home, currentGame.homeAbbr) || teamNamesMatch(home, currentGame.name) ||
+         teamNamesMatch(away, currentGame.awayAbbr) || teamNamesMatch(away, currentGame.name)){
+        matched = ev;
+        break;
+      }
+    }
+
+    if(!matched){
+      multiBookStatus.textContent = 'could not automatically match this game to a SportsGameOdds event — raw event list below so we can fix the matching';
+      multiBookResult.innerHTML = '<pre style="white-space:pre-wrap;font-size:11px;color:var(--muted);background:var(--panel-2);padding:10px;border-radius:4px;max-height:300px;overflow:auto;">'+JSON.stringify(events.slice(0,5),null,2).slice(0,4000)+'</pre>';
+      return;
+    }
+
+    multiBookStatus.textContent = 'matched event — parsing odds by bookmaker (best effort)';
+    const odds = matched.odds || {};
+    const rows = [];
+    Object.keys(odds).forEach(oddID => {
+      if(!/total|over|under/i.test(oddID)) return;
+      const o = odds[oddID];
+      const byBook = o.byBookmaker || o.bookmakerOdds || {};
+      Object.keys(byBook).forEach(bk => {
+        const entry = byBook[bk];
+        rows.push({
+          book: bk,
+          oddID,
+          value: entry.overUnder ?? entry.line ?? entry.points ?? '—',
+          odds: entry.odds ?? entry.price ?? entry.american ?? '—'
+        });
+      });
+    });
+
+    if(rows.length === 0){
+      multiBookResult.innerHTML =
+        '<div class="empty">matched the event but couldn\'t find per-bookmaker total odds in the expected shape — raw odds object below so the parsing can be fixed.</div>'+
+        '<pre style="white-space:pre-wrap;font-size:11px;color:var(--muted);background:var(--panel-2);padding:10px;border-radius:4px;max-height:300px;overflow:auto;margin-top:10px;">'+JSON.stringify(odds,null,2).slice(0,4000)+'</pre>';
+      return;
+    }
+
+    let tableRows = rows.map(r => '<tr><td>'+r.book+'</td><td>'+r.oddID+'</td><td>'+r.value+'</td><td>'+r.odds+'</td></tr>').join('');
+    multiBookResult.innerHTML =
+      '<table><thead><tr><th>Book</th><th>Market</th><th>Line</th><th>Odds</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+
+      '<p class="note">First-pass parsing — field names guessed from partial documentation. If any of these numbers look wrong, share what you\'re seeing and the raw response (check the browser console) so the parsing can be corrected against the real shape.</p>';
+  }catch(err){
+    multiBookStatus.textContent = 'failed: '+err.message+' (could also be a CORS block — check the browser console for details)';
+  }finally{
+    fetchMultiBookBtn.disabled = false;
+  }
+});
+
+function slopeAt(points, key, t, windowMin){
+  const tPrev = Math.max(0, t - windowMin);
+  const actualWindow = t - tPrev;
+  if(actualWindow <= 0) return 0;
+  return (valueAt(points,key,t) - valueAt(points,key,tPrev)) / actualWindow;
+}
+function findCrossovers(points, maxT){
+  const crossings = [];
+  const steps = 240;
+  let prevSign = null;
+  for(let i=0;i<=steps;i++){
+    const t = (maxT/steps)*i;
+    const margin = valueAt(points,'home',t) - valueAt(points,'away',t);
+    const sign = margin > 0 ? 1 : margin < 0 ? -1 : 0;
+    if(sign !== 0 && prevSign !== null && sign !== prevSign) crossings.push(t);
+    if(sign !== 0) prevSign = sign;
+  }
+  return crossings;
+}
+function findDivergences(points, maxT){
+  const windowMin = 5;
+  const steps = 80;
+  const events = [];
+  let lastFlag = -999;
+  for(let i=1;i<=steps;i++){
+    const t = (maxT/steps)*i;
+    const margin = valueAt(points,'home',t) - valueAt(points,'away',t);
+    const leaderKey = margin >= 0 ? 'home' : 'away';
+    const trailerKey = margin >= 0 ? 'away' : 'home';
+    const leaderSlope = slopeAt(points, leaderKey, t, windowMin);
+    const trailerSlope = slopeAt(points, trailerKey, t, windowMin);
+    const prevMargin = valueAt(points,'home', Math.max(0,t-1)) - valueAt(points,'away', Math.max(0,t-1));
+    const widening = Math.abs(margin) >= Math.abs(prevMargin);
+    if(widening && trailerSlope > leaderSlope + 0.6 && (t-lastFlag) > 4){
+      events.push({t, trailer: trailerKey, leader: leaderKey});
+      lastFlag = t;
+    }
+  }
+  return events;
+}
+function confirmDivergence(points, maxT, event){
+  const crossings = findCrossovers(points, maxT);
+  return crossings.some(ct => ct > event.t && ct <= event.t + 6);
+}
+function fmtGameTime(t){
+  const period = t <= 40 ? Math.min(4, Math.floor(t/10)+1) : Math.floor((t-40)/5)+5;
+  const periodLabel = period<=4 ? 'Q'+period : 'OT'+(period-4);
+  const intoQ = t <= 40 ? t - (period-1)*10 : t - 40 - (period-5)*5;
+  const qLen = period<=4 ? 10 : 5;
+  const remaining = qLen - intoQ;
+  const mm = Math.floor(remaining), ss = Math.round((remaining-mm)*60);
+  return periodLabel+' '+mm+':'+String(ss).padStart(2,'0');
+}
+
+function drawChart(game){
+  const dpr = window.devicePixelRatio || 1;
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const padL = 42, padR = 14, padT = 14, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const maxT = game.maxT;
+  const maxScore = Math.max(game.finalAway, game.finalHome) * 1.1;
+  const xOf = t => padL + (t/maxT)*plotW;
+  const yOf = s => padT + plotH - (s/maxScore)*plotH;
+
+  ctx.strokeStyle = '#1F2730';
+  ctx.lineWidth = 1;
+  ctx.font = '10.5px JetBrains Mono, monospace';
+  ctx.fillStyle = '#4E5A66';
+  for(let i=0;i<=5;i++){
+    const val = (maxScore/5)*i;
+    const y = yOf(val);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+    ctx.fillText(Math.round(val), 4, y+3);
+  }
+  [10,20,30,40].forEach(t=>{
+    if(t>maxT) return;
+    const x = xOf(t);
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,h-padB); ctx.stroke();
+    const label = t===10?'Q1':t===20?'Half':t===30?'Q3':'End reg';
+    ctx.fillText(label, x-12, h-padB+16);
+  });
+
+  const steps = 160;
+  for(let i=0;i<steps;i++){
+    const t0=(maxT/steps)*i, t1=(maxT/steps)*(i+1);
+    const a0=valueAt(game.points,'away',t0), h0=valueAt(game.points,'home',t0);
+    ctx.fillStyle = h0 >= a0 ? 'rgba(232,185,75,0.13)' : 'rgba(76,141,255,0.13)';
+    const x0=xOf(t0), x1=xOf(t1);
+    const y0=Math.min(yOf(a0),yOf(h0)), y1=Math.max(yOf(a0),yOf(h0));
+    ctx.fillRect(x0,y0,(x1-x0)+1,y1-y0);
+  }
+
+  ctx.strokeStyle = '#4C8DFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  game.points.forEach((p,i)=>{ const x=xOf(p.t), y=yOf(p.away); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.stroke();
+
+  ctx.strokeStyle = '#E8B94B';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  game.points.forEach((p,i)=>{ const x=xOf(p.t), y=yOf(p.home); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.stroke();
+
+  const crossings = findCrossovers(game.points, maxT);
+  ctx.fillStyle = '#FF5C6C';
+  crossings.forEach(t=>{
+    const y = yOf(valueAt(game.points,'home',t));
+    ctx.beginPath(); ctx.arc(xOf(t), y, 3, 0, Math.PI*2); ctx.fill();
+  });
+
+  const divergences = findDivergences(game.points, maxT);
+  divergences.forEach(d=>{
+    const y = yOf(valueAt(game.points, d.leader, d.t));
+    ctx.fillStyle = 'rgba(76,141,255,0.55)';
+    ctx.beginPath(); ctx.arc(xOf(d.t), y, 4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#0A0D10'; ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  game.crossings = crossings;
+  game.divergences = divergences;
+}
+
+function drawMomentum(game){
+  const windowMin = 5;
+  const marks = [{label:'Q1',t:10},{label:'Half',t:20},{label:'Q3',t:30},{label:'Final',t:game.maxT}];
+  momentumCards.innerHTML = '';
+  marks.forEach(m=>{
+    const awaySlope = slopeAt(game.points,'away',m.t,windowMin);
+    const homeSlope = slopeAt(game.points,'home',m.t,windowMin);
+    const margin = valueAt(game.points,'home',m.t) - valueAt(game.points,'away',m.t);
+    const edgeTeam = homeSlope > awaySlope ? game.homeAbbr : game.awayAbbr;
+    const edgeCls = homeSlope > awaySlope ? 'home' : 'away';
+    const card = document.createElement('div');
+    card.className = 'cp-card';
+    card.innerHTML =
+      '<div class="cp-label">'+m.label+'</div>'+
+      '<div class="cp-val '+edgeCls+'">'+edgeTeam+' momentum</div>'+
+      '<div class="cp-sub">'+game.awayAbbr+' '+awaySlope.toFixed(1)+' pt/min &middot; '+game.homeAbbr+' '+homeSlope.toFixed(1)+' pt/min</div>'+
+      '<div class="cp-sub">margin '+(margin>0?'+':'')+margin.toFixed(0)+' '+(margin>=0?game.homeAbbr:game.awayAbbr)+'</div>';
+    momentumCards.appendChild(card);
+  });
+
+  const divergences = game.divergences || findDivergences(game.points, game.maxT);
+  if(divergences.length === 0){
+    divergenceList.innerHTML = '<div class="empty">no divergence signals this game</div>';
+  } else {
+    divergenceList.innerHTML = divergences.map(d=>{
+      const trailerAbbr = d.trailer==='away' ? game.awayAbbr : game.homeAbbr;
+      const leaderAbbr = d.leader==='away' ? game.awayAbbr : game.homeAbbr;
+      const confirmed = confirmDivergence(game.points, game.maxT, d);
+      return '<div class="divergence-item"><span class="tag '+(confirmed?'confirmed':'unconfirmed')+'">'+(confirmed?'confirmed':'no follow-through')+'</span>'+
+        fmtGameTime(d.t)+' — '+trailerAbbr+' outscoring '+leaderAbbr+' on the trailing 5-min slope while still behind</div>';
+    }).join('');
+  }
+}
+
+addLogBtn.addEventListener('click', () => {
+  if(!currentGame) return;
+  const divergences = currentGame.divergences || findDivergences(currentGame.points, currentGame.maxT);
+  const scored = divergences.map(d => confirmDivergence(currentGame.points, currentGame.maxT, d));
+  const newEntry = {
+    id: currentGame.id,
+    name: currentGame.shortLabel,
+    date: currentGame.date,
+    season: currentGame.season || null,
+    awayAbbr: currentGame.awayAbbr,
+    homeAbbr: currentGame.homeAbbr,
+    points: currentGame.points,
+    maxT: currentGame.maxT,
+    finalAway: currentGame.finalAway,
+    finalHome: currentGame.finalHome,
+    openingTotal: currentGame.openingTotal,
+    totalSource: currentGame.totalSource,
+    crossings: (currentGame.crossings || findCrossovers(currentGame.points, currentGame.maxT)).length,
+    signals: divergences.length,
+    confirmed: scored.filter(Boolean).length
+  };
+  sessionLog.push(newEntry);
+  renderLog();
+  dbPut(newEntry).catch(e => setStatus('saved to session but failed to persist to local database — '+e.message,'err'));
+  patternPanelWrap.style.display = currentGame ? 'block' : 'none';
+  setStatus('added to session log ('+sessionLog.length+' games)','ok');
+});
+
+function renderLog(){
+  if(sessionLog.length === 0){
+    logTableWrap.innerHTML = '<div class="empty">no games logged yet — plot a game above, then add it to the log</div>';
+    hitrateWrap.innerHTML = '';
+    paceAnalysisWrap.style.display = 'none';
+    return;
+  }
+  let rows = '';
+  sessionLog.forEach((g,i)=>{
+    rows += '<tr><td>'+g.date+'</td><td>'+g.name+'</td><td>'+(g.openingTotal||'—')+'</td><td>'+g.crossings+'</td><td>'+g.signals+'</td><td>'+g.confirmed+'/'+g.signals+'</td>'+
+      '<td><button class="removebtn" data-i="'+i+'" title="remove">&times;</button></td></tr>';
+  });
+  logTableWrap.innerHTML =
+    '<table><thead><tr><th>Date</th><th>Game</th><th>Total</th><th>Lead changes</th><th>Signals</th><th>Confirmed</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  logTableWrap.querySelectorAll('.removebtn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const idx = parseInt(e.target.dataset.i,10);
+      const removedId = sessionLog[idx].id;
+      sessionLog.splice(idx,1);
+      renderLog();
+      dbDelete(removedId).catch(()=>{});
+    });
+  });
+
+  const totalSignals = sessionLog.reduce((s,g)=>s+g.signals,0);
+  const totalConfirmed = sessionLog.reduce((s,g)=>s+g.confirmed,0);
+  const pct = totalSignals ? Math.round(100*totalConfirmed/totalSignals) : null;
+  hitrateWrap.innerHTML =
+    '<div class="hitrate">'+
+      '<div class="cp-label">Divergence signal hit rate across '+sessionLog.length+' game(s)</div>'+
+      '<div class="hitrate-num">'+(pct===null?'—':pct+'%')+'</div>'+
+      '<div class="hitrate-bar"><div class="hitrate-bar-fill" style="width:'+(pct||0)+'%"></div></div>'+
+      '<div class="cp-sub">'+totalConfirmed+' of '+totalSignals+' flagged signals were followed by an actual lead change within 6 minutes</div>'+
+    '</div>';
+
+  renderBucketAnalysis();
+}
+
+function bucketLabel(diff){
+  const mag = Math.abs(diff);
+  const dir = diff >= 0 ? 'over' : 'under';
+  const tier = mag < 4 ? 'small (1–4)' : mag < 8 ? 'medium (4–8)' : 'large (8+)';
+  return dir + ' pace, ' + tier;
+}
+
+function renderBucketAnalysis(){
+  const withTotals = sessionLog.filter(g => g.openingTotal);
+  if(withTotals.length === 0){
+    paceAnalysisWrap.style.display = 'none';
+    return;
+  }
+  paceAnalysisWrap.style.display = 'block';
+  const t = parseInt(checkpointSelect.value,10);
+  const buckets = {};
+  withTotals.forEach(g=>{
+    const diff = combinedAt(g.points, t) - paceAt(t, g.openingTotal);
+    if(Math.abs(diff) < 1) return;
+    const label = bucketLabel(diff);
+    if(!buckets[label]) buckets[label] = [];
+    const finalDiff = (g.finalAway+g.finalHome) - g.openingTotal;
+    const finalResult = Math.abs(finalDiff) < 0.5 ? 'push' : (finalDiff > 0 ? 'over' : 'under');
+    buckets[label].push(finalResult);
+  });
+  const order = ['under pace, large (8+)','under pace, medium (4–8)','under pace, small (1–4)','over pace, small (1–4)','over pace, medium (4–8)','over pace, large (8+)'];
+  let rows = '';
+  order.forEach(label=>{
+    const results = buckets[label];
+    if(!results || results.length === 0) return;
+    const n = results.length;
+    const overN = results.filter(r=>r==='over').length;
+    const underN = results.filter(r=>r==='under').length;
+    rows += '<tr><td>'+label+'</td><td>'+n+'</td>'+
+      '<td>'+Math.round(100*overN/n)+'% ('+overN+'/'+n+')</td>'+
+      '<td>'+Math.round(100*underN/n)+'% ('+underN+'/'+n+')</td></tr>';
+  });
+  if(rows === ''){
+    bucketTableWrap.innerHTML = '<div class="empty">no games with an opening total land in a meaningful bucket at this checkpoint yet</div>';
+  } else {
+    bucketTableWrap.innerHTML =
+      '<table><thead><tr><th>Bucket at checkpoint</th><th>Games</th><th>Finished over</th><th>Finished under</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<p class="note">"Large" buckets will be thin until you\'ve logged a lot of games — treat any bucket under ~10 games as noise, not a pattern.</p>';
+  }
+}
+checkpointSelect.addEventListener('change', renderBucketAnalysis);
+
+window.addEventListener('resize', ()=>{ if(currentGame) drawChart(currentGame); });
+
+function marginAt(points, t){
+  return valueAt(points,'home',t) - valueAt(points,'away',t);
+}
+
+function scoreMatch(current, saved){
+  const compareT = Math.min(current.maxT, saved.maxT);
+  const steps = 40;
+  let sumSq = 0, n = 0;
+  for(let i=0;i<=steps;i++){
+    const t = (compareT/steps)*i;
+    const dm = marginAt(current.points,t) - marginAt(saved.points,t);
+    sumSq += dm*dm;
+    n++;
+  }
+  const rmse = Math.sqrt(sumSq/n);
+  const similarity = Math.max(0, Math.round(100*Math.exp(-rmse/8)));
+  return { rmse, similarity, compareT };
+}
+
+findDatasetPairsBtn.addEventListener('click', () => {
+  if(sessionLog.length < 2){
+    datasetPairsResults.innerHTML = analysisEmpty('need at least 2 logged games to compare');
+    return;
+  }
+  datasetPairsResults.innerHTML = '<div class="status">comparing '+sessionLog.length+' games against each other, one moment...</div>';
+  setTimeout(() => {
+    const pairs = [];
+    for(let i=0;i<sessionLog.length;i++){
+      for(let j=i+1;j<sessionLog.length;j++){
+        const a = sessionLog[i], b = sessionLog[j];
+        const s = scoreMatch(a, b);
+        if(s.compareT < 10) continue;
+        pairs.push({ a, b, ...s });
+      }
+    }
+    pairs.sort((x,y) => x.rmse - y.rmse);
+    const top = pairs.slice(0, 10);
+    if(top.length === 0){
+      datasetPairsResults.innerHTML = analysisEmpty('no comparable pairs found');
+      return;
+    }
+    let rows = top.map(p=>{
+      const aMargin = p.a.finalHome - p.a.finalAway;
+      const bMargin = p.b.finalHome - p.b.finalAway;
+      const aOutcome = aMargin===0 ? 'tied' : (aMargin>0 ? p.a.homeAbbr+' by '+aMargin : p.a.awayAbbr+' by '+Math.abs(aMargin));
+      const bOutcome = bMargin===0 ? 'tied' : (bMargin>0 ? p.b.homeAbbr+' by '+bMargin : p.b.awayAbbr+' by '+Math.abs(bMargin));
+      return '<tr><td>'+p.a.name+' ('+p.a.date+')</td><td>'+p.b.name+' ('+p.b.date+')</td>'+
+        '<td>'+p.similarity+'%</td><td>'+p.rmse.toFixed(1)+' pt avg dev</td>'+
+        '<td>'+aOutcome+' / '+bOutcome+'</td></tr>';
+    }).join('');
+    datasetPairsResults.innerHTML =
+      '<table><thead><tr><th>Game A</th><th>Game B</th><th>Similarity</th><th>Avg deviation</th><th>Final results</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<p class="note">Compared over the time both games have in common ('+pairs.length+' total pairs checked across '+sessionLog.length+' games). Two games sharing a similar shape does not mean they share a cause — this is a browsing tool for finding recurring patterns, not a predictive signal on its own.</p>';
+  }, 30);
+});
+
+findMatchesBtn.addEventListener('click', () => {
+  if(!currentGame || sessionLog.length === 0) return;
+  const scored = sessionLog
+    .filter(g => g.id !== currentGame.id)
+    .map(g => ({ game: g, ...scoreMatch(currentGame, g) }))
+    .sort((a,b) => a.rmse - b.rmse)
+    .slice(0,5);
+
+  if(scored.length === 0){
+    matchResults.innerHTML = '<div class="empty">no other games in the log to compare against yet</div>';
+    return;
+  }
+
+  const palette = ['#21C97A','#E8B94B','#FF5C6C','#9D7BFF','#33D6C0'];
+  let html = '<div class="chart-wrap" style="height:260px;"><canvas id="overlayChart"></canvas></div><div class="legend" id="overlayLegend"></div><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">';
+  scored.forEach((s,i)=>{
+    const g = s.game;
+    const finalMargin = g.finalHome - g.finalAway;
+    const outcome = finalMargin===0 ? 'tied' : (finalMargin>0? g.homeAbbr+' won by '+finalMargin : g.awayAbbr+' won by '+Math.abs(finalMargin));
+    html += '<div class="divergence-item"><span style="width:10px;height:10px;border-radius:50%;background:'+palette[i]+';display:inline-block;flex-shrink:0;"></span>'
+      + '<span style="flex:1;">'+g.name+' ('+g.date+') &mdash; '+s.similarity+'% match, avg '+s.rmse.toFixed(1)+' pt deviation over first '+s.compareT.toFixed(0)+' min</span>'
+      + '<span style="color:var(--muted);">final: '+outcome+'</span></div>';
+  });
+  html += '</div><p class="note">Solid lines show each game up to the point of comparison; faded dashed continuation shows how that saved game actually played out from there &mdash; a rough look at where the current game might be headed if it keeps tracking the same shape. This is pattern similarity, not prediction: matching shape doesn\'t mean matching outcome.</p>';
+  matchResults.innerHTML = html;
+
+  drawOverlay(currentGame, scored, palette);
+});
+
+function drawOverlay(current, scored, palette){
+  const overlayCanvas = document.getElementById('overlayChart');
+  const dpr = window.devicePixelRatio || 1;
+  const wrap = overlayCanvas.parentElement;
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  overlayCanvas.width = w*dpr; overlayCanvas.height = h*dpr;
+  overlayCanvas.style.width = w+'px'; overlayCanvas.style.height = h+'px';
+  const ctx = overlayCanvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const padL = 42, padR = 14, padT = 14, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const maxT = Math.max(current.maxT, ...scored.map(s=>s.game.maxT));
+  const allMargins = [marginAt(current.points, current.maxT)];
+  scored.forEach(s=>{ allMargins.push(marginAt(s.game.points, s.game.maxT)); });
+  const maxAbsMargin = Math.max(15, ...allMargins.map(Math.abs)) * 1.15;
+
+  const xOf = t => padL + (t/maxT)*plotW;
+  const yOf = m => padT + plotH/2 - (m/maxAbsMargin)*(plotH/2);
+
+  ctx.strokeStyle = '#1F2730';
+  ctx.lineWidth = 1;
+  ctx.font = '10.5px JetBrains Mono, monospace';
+  ctx.fillStyle = '#4E5A66';
+  ctx.beginPath(); ctx.moveTo(padL, yOf(0)); ctx.lineTo(w-padR, yOf(0)); ctx.stroke();
+  ctx.fillText('0', 4, yOf(0)+3);
+  [10,20,30,40].forEach(t=>{
+    if(t>maxT) return;
+    const x = xOf(t);
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,h-padB); ctx.stroke();
+    const label = t===10?'Q1':t===20?'Half':t===30?'Q3':'End reg';
+    ctx.fillText(label, x-12, h-padB+16);
+  });
+
+  let legendHtml = '<div class="legend-item"><span class="legend-swatch" style="background:var(--text)"></span>Current game (margin)</div>';
+
+  scored.forEach((s,i)=>{
+    const g = s.game;
+    const color = palette[i];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const steps = 100;
+    for(let j=0;j<=steps;j++){
+      const t = (s.compareT/steps)*j;
+      const x = xOf(t), y = yOf(marginAt(g.points,t));
+      if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+
+    if(g.maxT > s.compareT){
+      ctx.setLineDash([4,3]);
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      const steps2 = 60;
+      for(let j=0;j<=steps2;j++){
+        const t = s.compareT + ((g.maxT - s.compareT)/steps2)*j;
+        const x = xOf(t), y = yOf(marginAt(g.points,t));
+        if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([]);
+    }
+    legendHtml += '<div class="legend-item"><span class="legend-swatch" style="background:'+color+'"></span>'+g.awayAbbr+' @ '+g.homeAbbr+' ('+g.date+')</div>';
+  });
+
+  ctx.strokeStyle = '#E7ECEF';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  current.points.forEach((p,i)=>{
+    const x = xOf(p.t), y = yOf(p.home-p.away);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  document.getElementById('overlayLegend').innerHTML = legendHtml;
+}
+
+function analysisEmpty(msg){
+  return '<div class="empty">'+msg+'</div>';
+}
+
+function runComebackAnalysis(){
+  const buckets = {'5-9':[], '10-14':[], '15+':[]};
+  sessionLog.forEach(g=>{
+    const margin = valueAt(g.points,'home',20) - valueAt(g.points,'away',20);
+    const mag = Math.abs(margin);
+    if(mag < 5) return;
+    const trailer = margin < 0 ? 'home' : 'away';
+    const trailerAbbr = trailer==='home' ? g.homeAbbr : g.awayAbbr;
+    const trailerWon = trailer==='home' ? (g.finalHome > g.finalAway) : (g.finalAway > g.finalHome);
+    const label = mag < 10 ? '5-9' : mag < 15 ? '10-14' : '15+';
+    buckets[label].push({won: trailerWon, trailerAbbr, game: g});
+  });
+  let rows = '';
+  ['5-9','10-14','15+'].forEach(label=>{
+    const arr = buckets[label];
+    if(arr.length===0) return;
+    const wins = arr.filter(x=>x.won).length;
+    rows += '<tr><td>down '+label+' at half</td><td>'+arr.length+'</td><td>'+Math.round(100*wins/arr.length)+'% ('+wins+'/'+arr.length+')</td></tr>';
+  });
+  if(rows==='') return analysisEmpty('no games in the log had a half-time margin of 5 or more — nothing to bucket yet');
+  return '<table><thead><tr><th>Trailing margin</th><th>Games</th><th>Trailing team won</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Trailing team = whichever team was behind at halftime in that game. "Won" means came back to win outright, not just covered.</p>';
+}
+
+function runVolatilityAnalysis(){
+  const buckets = {'0':[], '1-2':[], '3-4':[], '5+':[]};
+  sessionLog.forEach(g=>{
+    const label = g.crossings===0 ? '0' : g.crossings<=2 ? '1-2' : g.crossings<=4 ? '3-4' : '5+';
+    const finalMargin = Math.abs(g.finalHome - g.finalAway);
+    buckets[label].push(finalMargin);
+  });
+  let rows = '';
+  ['0','1-2','3-4','5+'].forEach(label=>{
+    const arr = buckets[label];
+    if(arr.length===0) return;
+    const avg = arr.reduce((a,b)=>a+b,0)/arr.length;
+    const closeCount = arr.filter(m=>m<=5).length;
+    rows += '<tr><td>'+label+' lead changes</td><td>'+arr.length+'</td><td>'+avg.toFixed(1)+' pts</td><td>'+Math.round(100*closeCount/arr.length)+'% ('+closeCount+'/'+arr.length+')</td></tr>';
+  });
+  if(rows==='') return analysisEmpty('no logged games yet');
+  return '<table><thead><tr><th>Lead changes</th><th>Games</th><th>Avg final margin</th><th>Finished within 5</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Tests whether a volatile lead-change game tends to also finish close, versus a game that never flips the lead tending toward a blowout.</p>';
+}
+
+function runFirstLeadAnalysis(){
+  let n=0, firstLeadWon=0;
+  sessionLog.forEach(g=>{
+    let firstLeader = null;
+    for(const p of g.points){
+      if(p.home !== p.away){ firstLeader = p.home > p.away ? 'home' : 'away'; break; }
+    }
+    if(!firstLeader) return;
+    n++;
+    const won = firstLeader==='home' ? (g.finalHome > g.finalAway) : (g.finalAway > g.finalHome);
+    if(won) firstLeadWon++;
+  });
+  if(n===0) return analysisEmpty('no logged games yet');
+  const pct = Math.round(100*firstLeadWon/n);
+  return '<div class="hitrate"><div class="cp-label">Team that scores first / leads first goes on to win</div>'+
+    '<div class="hitrate-num">'+pct+'%</div>'+
+    '<div class="hitrate-bar"><div class="hitrate-bar-fill" style="width:'+pct+'%"></div></div>'+
+    '<div class="cp-sub">'+firstLeadWon+' of '+n+' logged games</div></div>'+
+    '<p class="note">A baseline worth comparing against: in a roughly even matchup this would hover somewhere near 55-65% just from first-lead correlating with the better team, so treat deviations from that range as the interesting part, not the raw number.</p>';
+}
+
+function runHomeEdgeAnalysis(){
+  const marks = [{label:'Q1',t:10},{label:'Half',t:20},{label:'Q3',t:30}];
+  let rows = '';
+  marks.forEach(m=>{
+    let diffs = [];
+    sessionLog.forEach(g=>{
+      const t = Math.min(m.t, g.maxT);
+      const homeSlope = slopeAt(g.points,'home',t,5);
+      const awaySlope = slopeAt(g.points,'away',t,5);
+      diffs.push(homeSlope - awaySlope);
+    });
+    if(diffs.length===0) return;
+    const avg = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+    const homeHigher = diffs.filter(d=>d>0).length;
+    rows += '<tr><td>'+m.label+'</td><td>'+(avg>=0?'+':'')+avg.toFixed(2)+' pt/min</td><td>'+Math.round(100*homeHigher/diffs.length)+'% ('+homeHigher+'/'+diffs.length+')</td></tr>';
+  });
+  if(rows==='') return analysisEmpty('no logged games yet');
+  return '<table><thead><tr><th>Checkpoint</th><th>Avg home minus away trailing slope</th><th>Home had the higher rate</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Positive means home teams in your log tend to be scoring faster than the away team at that point in the game — a rough proxy for home-court momentum, not adjusted for opponent quality.</p>';
+}
+
+function runQuarterPaceAnalysis(){
+  const quarters = [{label:'Q1',t0:0,t1:10},{label:'Q2',t0:10,t1:20},{label:'Q3',t0:20,t1:30},{label:'Q4',t0:30,t1:40}];
+  let rows = '';
+  quarters.forEach(q=>{
+    let totals = [];
+    sessionLog.forEach(g=>{
+      if(g.maxT < q.t1) return;
+      const combinedStart = combinedAt(g.points, q.t0);
+      const combinedEnd = combinedAt(g.points, q.t1);
+      totals.push(combinedEnd - combinedStart);
+    });
+    if(totals.length===0) return;
+    const avg = totals.reduce((a,b)=>a+b,0)/totals.length;
+    rows += '<tr><td>'+q.label+'</td><td>'+totals.length+'</td><td>'+avg.toFixed(1)+' combined pts</td></tr>';
+  });
+  if(rows==='') return analysisEmpty('no full-length games in the log yet');
+  return '<table><thead><tr><th>Quarter</th><th>Games</th><th>Avg combined points scored</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Shows which quarter tends to run hottest or coldest across your logged games — useful context if you\'re deciding where in the game a pace bet has the most room to move.</p>';
+}
+
+function paceDirAt(g, t){
+  const diff = combinedAt(g.points, t) - paceAt(t, g.openingTotal);
+  if(Math.abs(diff) < 1) return 'push';
+  return diff > 0 ? 'over' : 'under';
+}
+
+function runSingleCheckpointAnalysis(){
+  const withTotals = sessionLog.filter(g => g.openingTotal);
+  if(withTotals.length === 0) return analysisEmpty('no games with an opening total in the log yet');
+  const checkpoints = [{label:'Q1',t:10},{label:'Half',t:20},{label:'Q3',t:30}];
+  let rows = '';
+  checkpoints.forEach(cp=>{
+    const overArr = [], underArr = [];
+    withTotals.forEach(g=>{
+      const t = Math.min(cp.t, g.maxT);
+      const dir = paceDirAt(g, t);
+      if(dir === 'push') return;
+      const finalDiff = (g.finalAway+g.finalHome) - g.openingTotal;
+      const finalResult = Math.abs(finalDiff) < 0.5 ? 'push' : (finalDiff>0?'over':'under');
+      (dir==='over' ? overArr : underArr).push({finalResult, finalDiff});
+    });
+    [{dir:'over',arr:overArr},{dir:'under',arr:underArr}].forEach(({dir,arr})=>{
+      if(arr.length===0) return;
+      const n = arr.length;
+      const overGames = arr.filter(r=>r.finalResult==='over');
+      const underGames = arr.filter(r=>r.finalResult==='under');
+      const avgOverMargin = overGames.length ? (overGames.reduce((s,r)=>s+r.finalDiff,0)/overGames.length) : null;
+      const avgUnderMargin = underGames.length ? (underGames.reduce((s,r)=>s-r.finalDiff,0)/underGames.length) : null;
+      rows += '<tr><td>'+cp.label+'</td><td>running '+dir+' pace</td><td>'+n+'</td>'+
+        '<td>'+Math.round(100*overGames.length/n)+'% ('+overGames.length+'/'+n+')'+(avgOverMargin!==null?' &middot; avg +'+avgOverMargin.toFixed(1)+' pts':'')+'</td>'+
+        '<td>'+Math.round(100*underGames.length/n)+'% ('+underGames.length+'/'+n+')'+(avgUnderMargin!==null?' &middot; avg -'+avgUnderMargin.toFixed(1)+' pts':'')+'</td></tr>';
+    });
+  });
+  if(rows==='') return analysisEmpty('not enough games to bucket at any checkpoint yet');
+  return '<table><thead><tr><th>Checkpoint</th><th>Direction</th><th>Games</th><th>Finished over</th><th>Finished under</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">"Avg" figures show the typical margin by which those games actually beat or missed the total, not just how often — a bucket that hits 70% by an average of 15 points is a very different bet than one hitting 70% by an average of 2. Each checkpoint tested independently, without the compounding (and partly self-fulfilling, since half the scoring is already locked in by halftime) effect of combining checkpoints.</p>';
+}
+
+function runComboCheckpointAnalysis(){
+  const withTotals = sessionLog.filter(g => g.openingTotal);
+  if(withTotals.length === 0) return analysisEmpty('no games with an opening total in the log yet');
+  const combos = {};
+  withTotals.forEach(g=>{
+    const q1 = paceDirAt(g, 10);
+    const half = paceDirAt(g, 20);
+    if(q1==='push' || half==='push') return;
+    const label = 'Q1 '+q1+' / Half '+half;
+    const finalDiff = (g.finalAway+g.finalHome) - g.openingTotal;
+    const finalResult = Math.abs(finalDiff) < 0.5 ? 'push' : (finalDiff>0?'over':'under');
+    if(!combos[label]) combos[label] = [];
+    combos[label].push({finalResult, finalDiff});
+  });
+  const order = ['Q1 over / Half over','Q1 over / Half under','Q1 under / Half over','Q1 under / Half under'];
+  let rows = '';
+  order.forEach(label=>{
+    const arr = combos[label];
+    if(!arr || arr.length===0) return;
+    const n = arr.length;
+    const overGames = arr.filter(r=>r.finalResult==='over');
+    const underGames = arr.filter(r=>r.finalResult==='under');
+    const avgOverMargin = overGames.length ? (overGames.reduce((s,r)=>s+r.finalDiff,0)/overGames.length) : null;
+    const avgUnderMargin = underGames.length ? (underGames.reduce((s,r)=>s-r.finalDiff,0)/underGames.length) : null;
+    rows += '<tr><td>'+label+'</td><td>'+n+'</td>'+
+      '<td>'+Math.round(100*overGames.length/n)+'% ('+overGames.length+'/'+n+')'+(avgOverMargin!==null?' &middot; avg +'+avgOverMargin.toFixed(1)+' pts':'')+'</td>'+
+      '<td>'+Math.round(100*underGames.length/n)+'% ('+underGames.length+'/'+n+')'+(avgUnderMargin!==null?' &middot; avg -'+avgUnderMargin.toFixed(1)+' pts':'')+'</td></tr>';
+  });
+  if(rows==='') return analysisEmpty('not enough games with both a Q1 and Half pace direction to bucket yet');
+  return '<table><thead><tr><th>Checkpoint combo</th><th>Games</th><th>Finished over</th><th>Finished under</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">Tests whether staying on the same side of pace through two checkpoints (or flipping between them) is a stronger signal than either checkpoint alone — a compounding version of the single-checkpoint buckets above.</p>';
+}
+
+function runClosingAccuracyAnalysis(){
+  const withTotals = sessionLog.filter(g => g.openingTotal);
+  if(withTotals.length === 0) return analysisEmpty('no games with an opening total in the log yet');
+  const bands = {'0-5':[], '5-10':[], '10-15':[], '15+':[]};
+  let overN=0, underN=0, pushN=0, sumAbs=0;
+  withTotals.forEach(g=>{
+    const finalTotal = g.finalAway + g.finalHome;
+    const diff = finalTotal - g.openingTotal;
+    const absDiff = Math.abs(diff);
+    sumAbs += absDiff;
+    if(absDiff < 0.5) pushN++;
+    else if(diff > 0) overN++;
+    else underN++;
+    const band = absDiff < 5 ? '0-5' : absDiff < 10 ? '5-10' : absDiff < 15 ? '10-15' : '15+';
+    bands[band].push(g);
+  });
+  const n = withTotals.length;
+  let rows = '';
+  ['0-5','5-10','10-15','15+'].forEach(b=>{
+    const arr = bands[b];
+    rows += '<tr><td>within '+b+' pts of the total</td><td>'+arr.length+'</td><td>'+Math.round(100*arr.length/n)+'%</td></tr>';
+  });
+  return '<div class="hitrate"><div class="cp-label">Average absolute distance from the total at final</div>'+
+    '<div class="hitrate-num">'+(sumAbs/n).toFixed(1)+' pts</div>'+
+    '<div class="cp-sub">'+n+' games with a total &middot; '+Math.round(100*overN/n)+'% over, '+Math.round(100*underN/n)+'% under, '+pushN+' push</div></div>'+
+    '<table style="margin-top:14px;"><thead><tr><th>Final distance from total</th><th>Games</th><th>Share</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="note">A sanity check on the totals themselves: if most games land within 5-10 points, the totals in your log were sharp; a wide spread means either the totals were soft or these are genuinely high-variance games.</p>';
+}
+
+function maAt(points, t, windowMin){
+  const tStart = Math.max(0, t - windowMin);
+  const samples = 5;
+  let sum = 0;
+  for(let i=0;i<samples;i++){
+    const st = tStart + (t - tStart) * (i/(samples-1));
+    sum += marginAt(points, st);
+  }
+  return sum/samples;
+}
+
+function runMACrossAnalysis(){
+  const shortWin = 2, longWin = 6, stepSize = 0.5, followWindow = 5;
+  let events = [];
+  sessionLog.forEach(g=>{
+    let prevDiff = null;
+    for(let t=longWin; t<=g.maxT; t+=stepSize){
+      const shortMA = maAt(g.points, t, shortWin);
+      const longMA = maAt(g.points, t, longWin);
+      const diff = shortMA - longMA;
+      if(prevDiff !== null && diff !== 0 && Math.sign(diff) !== Math.sign(prevDiff)){
+        const direction = diff > 0 ? 'home' : 'away';
+        const marginAtCross = marginAt(g.points, t);
+        const marginLater = marginAt(g.points, Math.min(g.maxT, t + followWindow));
+        const signedAtCross = direction === 'home' ? marginAtCross : -marginAtCross;
+        const signedLater = direction === 'home' ? marginLater : -marginLater;
+        events.push({ extended: signedLater > signedAtCross });
+      }
+      prevDiff = diff;
+    }
+  });
+  if(events.length === 0) return analysisEmpty('no moving-average crossovers detected yet — log more games');
+  const extendedN = events.filter(e=>e.extended).length;
+  const pct = Math.round(100*extendedN/events.length);
+  return '<div class="hitrate"><div class="cp-label">Short (2-min) MA crosses long (6-min) MA — momentum keeps extending 5 min later</div>'+
+    '<div class="hitrate-num">'+pct+'%</div>'+
+    '<div class="hitrate-bar"><div class="hitrate-bar-fill" style="width:'+pct+'%"></div></div>'+
+    '<div class="cp-sub">'+extendedN+' of '+events.length+' crossovers across '+sessionLog.length+' game(s)</div></div>'+
+    '<p class="note">Standard trend-following setup borrowed straight from market technicals: when the short-window average of the scoring margin crosses the long-window average, does that shift keep going, or fizzle? 50% is the coin-flip baseline — meaningfully above it is the interesting result.</p>';
+}
+
+function runMeanReversionAnalysis(){
+  const runWindow = 3, threshold = 8, followWindow = 5, stepSize = 1;
+  let events = [];
+  sessionLog.forEach(g=>{
+    let lastFlag = -999;
+    for(let t=runWindow; t<=g.maxT; t+=stepSize){
+      const dMargin = marginAt(g.points, t) - marginAt(g.points, t - runWindow);
+      if(Math.abs(dMargin) >= threshold && (t - lastFlag) > runWindow){
+        lastFlag = t;
+        const marginAtFlag = marginAt(g.points, t);
+        const marginAfter = marginAt(g.points, Math.min(g.maxT, t + followWindow));
+        const giveBack = dMargin > 0 ? (marginAtFlag - marginAfter) : (marginAfter - marginAtFlag);
+        events.push({ reverted: (giveBack / Math.abs(dMargin)) >= 0.3 });
+      }
+    }
+  });
+  if(events.length === 0) return analysisEmpty('no extreme runs (8+ point margin swing inside 3 minutes) detected yet');
+  const revertedN = events.filter(e=>e.reverted).length;
+  const pct = Math.round(100*revertedN/events.length);
+  return '<div class="hitrate"><div class="cp-label">Margin gives back 30%+ of an extreme run within 5 minutes</div>'+
+    '<div class="hitrate-num">'+pct+'%</div>'+
+    '<div class="hitrate-bar"><div class="hitrate-bar-fill" style="width:'+pct+'%"></div></div>'+
+    '<div class="cp-sub">'+revertedN+' of '+events.length+' extreme runs across '+sessionLog.length+' game(s)</div></div>'+
+    '<p class="note">The mean-reversion trade: after a sharp, fast move in the scoring margin (8+ points inside 3 minutes, either direction), does it tend to snap back, or keep trending? Applies to whichever team made the run, regardless of who was leading at the time.</p>';
+}
+
+function runBreakoutAnalysis(){
+  const stepSize = 1, minExceed = 3, followWindow = 5;
+  let events = [];
+  sessionLog.forEach(g=>{
+    let priorHigh = 0, lastFlag = -999;
+    for(let t=5; t<=g.maxT; t+=stepSize){
+      const curAbs = Math.abs(marginAt(g.points, t));
+      if(curAbs > priorHigh + minExceed && (t - lastFlag) > 5){
+        lastFlag = t;
+        const later = Math.abs(marginAt(g.points, Math.min(g.maxT, t + followWindow)));
+        events.push({ continued: later > curAbs });
+      }
+      if(curAbs > priorHigh) priorHigh = curAbs;
+    }
+  });
+  if(events.length === 0) return analysisEmpty('no clean breakouts beyond the established margin range detected yet');
+  const continuedN = events.filter(e=>e.continued).length;
+  const pct = Math.round(100*continuedN/events.length);
+  return '<div class="hitrate"><div class="cp-label">Margin breaks to a new game-high and keeps extending 5 minutes later</div>'+
+    '<div class="hitrate-num">'+pct+'%</div>'+
+    '<div class="hitrate-bar"><div class="hitrate-bar-fill" style="width:'+pct+'%"></div></div>'+
+    '<div class="cp-sub">'+continuedN+' of '+events.length+' breakouts across '+sessionLog.length+' game(s)</div></div>'+
+    '<p class="note">The breakout-trading question: once the margin pushes past its prior established range for the game (by at least 3 points), does that new level tend to hold and extend, or fade back inside the old range?</p>';
+}
+
+runAnalysisBtn.addEventListener('click', () => {
+  if(sessionLog.length === 0){
+    analysisResults.innerHTML = analysisEmpty('no games logged yet — plot and add some games first');
+    return;
+  }
+  const type = analysisSelect.value;
+  let html = '';
+  if(type === 'singleCheckpoint') html = runSingleCheckpointAnalysis();
+  else if(type === 'comboCheckpoints') html = runComboCheckpointAnalysis();
+  else if(type === 'closingAccuracy') html = runClosingAccuracyAnalysis();
+  else if(type === 'maCross') html = runMACrossAnalysis();
+  else if(type === 'meanReversion') html = runMeanReversionAnalysis();
+  else if(type === 'breakout') html = runBreakoutAnalysis();
+  else if(type === 'comeback') html = runComebackAnalysis();
+  else if(type === 'volatility') html = runVolatilityAnalysis();
+  else if(type === 'firstLead') html = runFirstLeadAnalysis();
+  else if(type === 'homeEdge') html = runHomeEdgeAnalysis();
+  else if(type === 'quarterPace') html = runQuarterPaceAnalysis();
+  analysisResults.innerHTML = html;
+});
+
+exportLogBtn.addEventListener('click', () => {
+  if(sessionLog.length === 0){
+    setStatus('nothing to export — log a game first','err');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(sessionLog)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'wnba-session-log-'+todayStr()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus('exported '+sessionLog.length+' games','ok');
+});
+
+importLogBtn.addEventListener('click', () => importLogFile.click());
+
+importLogFile.addEventListener('change', () => {
+  const file = importLogFile.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const imported = JSON.parse(reader.result);
+      if(!Array.isArray(imported)) throw new Error('file does not contain a session log array');
+      const existingIds = new Set(sessionLog.map(g=>g.id+'|'+g.date));
+      const newGames = [];
+      imported.forEach(g=>{
+        const key = g.id+'|'+g.date;
+        if(!existingIds.has(key)){
+          sessionLog.push(g);
+          existingIds.add(key);
+          newGames.push(g);
+        }
+      });
+      renderLog();
+      dbPutMany(newGames).catch(e => setStatus('imported into session but failed to persist — '+e.message,'err'));
+      setStatus('imported '+newGames.length+' new game(s), '+(imported.length-newGames.length)+' already in the log','ok');
+    }catch(err){
+      setStatus('import failed — '+err.message,'err');
+    }
+  };
+  reader.readAsText(file);
+  importLogFile.value = '';
+});
+</script>
+</body>
+</html>
