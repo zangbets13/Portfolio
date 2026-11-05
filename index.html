@@ -181,6 +181,14 @@
   }
   .ledger-desc{ font-size:14.5px; margin:0; max-width:62ch; color:var(--ink); }
 
+  .work-links{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  .work-links a{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    text-decoration:none; border:1px solid var(--ink); padding:6px 12px;
+    transition:background .15s, color .15s;
+  }
+  .work-links a:hover{ background:var(--ink); color:var(--paper); }
+
   /* ---------- FLAGSHIP PROJECT ---------- */
   .flagship{
     border:1px solid var(--ink);
@@ -361,6 +369,7 @@
     <div class="nav-links">
       <a href="#about">About</a>
       <a href="#coursework">Coursework</a>
+      <a href="#academic">Academic Work</a>
       <a href="#experience">Experience</a>
       <a href="#projects">Projects</a>
       <a href="#skills">Skills</a>
@@ -407,7 +416,7 @@
         <div class="fact-row"><span>Minors</span><span>Neuroscience, Sociology</span></div>
         <div class="fact-row"><span>Science focus</span><span>Biology, A&amp;P, Neuroscience</span></div>
         <div class="fact-row"><span>Lab courses</span><span>4 completed</span></div>
-        <div class="fact-row"><span>Certified</span><span>TIPS (Alcohol Service)</span></div>
+        <div class="fact-row"><span>Certified</span><span>TIPS; Excel Essential Training</span></div>
         <div class="fact-row"><span>Tools</span><span>Python, R, SQL, Excel</span></div>
         <div class="fact-row"><span>Fandom</span><span>Buffalo Sabres season ticket holder</span></div>
       </div>
@@ -452,11 +461,69 @@
   </div>
 </section>
 
+<section id="academic">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">03 — ACADEMIC WORK</div>
+        <h2>Selected projects from the classroom</h2>
+      </div>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <div class="ledger-date">PSYC447<br/>FALL 2024</div>
+        <div>
+          <p class="ledger-role">Inclusive Housing Training for Resident Assistants</p>
+          <p class="ledger-org">Team training design project · Diversity, equity &amp; inclusion</p>
+          <p class="ledger-desc">Designed a training module teaching University of Maryland resident assistants to respectfully support transgender and nonbinary residents, covering pronoun use, coming-out conversations, campus resources, and non-discrimination policy. Built from interviews with current RAs and trans students, which shifted our approach toward universal, equitable support rather than singling anyone out. I helped write and voiced part of the final training video.</p>
+          <div class="work-links"><a href="academic/inclusive-ra-training-objectives.pdf" target="_blank" rel="noopener">Training objectives ↗</a><a href="academic/inclusive-ra-training-reflection.pdf" target="_blank" rel="noopener">Project reflection ↗</a></div>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-date">BSCI201<br/>FALL 2023</div>
+        <div>
+          <p class="ledger-role">Endocrine Case Study</p>
+          <p class="ledger-org">Human Anatomy &amp; Physiology I · Team case analysis</p>
+          <p class="ledger-desc">Worked through a clinical case of a patient presenting with tremor, poor focus, insomnia, and weight loss, weighing physiological and psychological explanations and connecting the symptoms to thyroid anatomy and hormone function (T3, T4, and calcitonin).</p>
+          <div class="work-links"><a href="academic/endocrine-case-study.pdf" target="_blank" rel="noopener">Read the case study ↗</a></div>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-date">PSYC417<br/>FALL 2024</div>
+        <div>
+          <p class="ledger-role">What Drives Food Waste? A Regression Analysis in R</p>
+          <p class="ledger-org">Data Science for Psychology &amp; Neuroscience · Final project</p>
+          <p class="ledger-desc">Analyzed a public dataset on food waste at events, testing how guest count, food quantity, and location predict waste. Built exploratory visuals, ran correlation analysis, and fit a linear regression that explained 74% of the variation in waste, with quantity of food prepared as the strongest predictor.</p>
+          <div class="work-links"><a href="academic/food-waste-regression-analysis.pdf" target="_blank" rel="noopener">Read the report ↗</a></div>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-date">PSYC300<br/>FALL 2023</div>
+        <div>
+          <p class="ledger-role">Volunteer Work and Satisfaction with Life</p>
+          <p class="ledger-org">Research Methods in Psychology Laboratory · APA research report</p>
+          <p class="ledger-desc">Designed and ran a survey study on whether volunteer engagement relates to life satisfaction, using a validated satisfaction-with-life scale, then analyzed the correlation and wrote it up as a full APA-style research report.</p>
+          <div class="work-links"><a href="academic/volunteer-work-life-satisfaction-report.pdf" target="_blank" rel="noopener">Read the report ↗</a></div>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-date">PSYC361<br/>SPRING 2025</div>
+        <div>
+          <p class="ledger-role">Improving Training Procedures for Restaurant Staff</p>
+          <p class="ledger-org">Survey of Industrial &amp; Organizational Psychology · Problem-solving paper</p>
+          <p class="ledger-desc">Applied I/O psychology to a real workplace I knew from the inside: diagnosed why a high-turnover restaurant&#8217;s five-day onboarding program produced inconsistent service, using massed vs. spaced practice, training transfer, and self-efficacy, then proposed a blended, multimedia training system that supports learning before, during, and after training.</p>
+          <div class="work-links"><a href="academic/improving-training-procedures.pdf" target="_blank" rel="noopener">Read the paper ↗</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="experience">
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <div class="sec-num">03 — EXPERIENCE</div>
+        <div class="sec-num">04 — EXPERIENCE</div>
         <h2>Where I've built the operational muscle</h2>
       </div>
     </div>
@@ -501,7 +568,7 @@
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <div class="sec-num">04 — PROJECTS</div>
+        <div class="sec-num">05 — PROJECTS</div>
         <h2>What I build when nobody's asking me to</h2>
       </div>
     </div>
@@ -566,7 +633,7 @@
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <div class="sec-num">05 — SKILLS</div>
+        <div class="sec-num">06 — SKILLS</div>
         <h2>The toolkit</h2>
       </div>
     </div>
@@ -577,7 +644,7 @@
           <li>Python: data analysis, predictive modeling</li>
           <li>R Studio: statistical analysis, visualization</li>
           <li>SQL: querying &amp; data management</li>
-          <li>Excel: pivot tables, formulas, modeling</li>
+          <li>Excel: pivot tables, formulas, modeling (<a href="academic/excel-essential-training-certificate.pdf" target="_blank" rel="noopener">LinkedIn Learning certificate</a>)</li>
         </ul>
       </div>
       <div class="skill-col">
@@ -606,7 +673,7 @@
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <div class="sec-num">06 — MEDIA</div>
+        <div class="sec-num">07 — MEDIA</div>
         <h2>Sports takes, off the clock</h2>
       </div>
     </div>
